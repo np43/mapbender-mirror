@@ -4,18 +4,43 @@
             {{ "mb.manager.admin.messagebox.only_region_elements" | trans }}
         </div>
     {% endif %}
-{% endif %}   
-    <label for="inputFilterElements" class="labelInput left">{{"mb.manager.admin.filter.element"|trans}}</label><input id="inputFilterElements" type="text" class="input listFilterInput">
+{% endif %}
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="addElement">Add Element</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
 
-    <ul id="listFilterElements" class="listFilterContainer clear">
-    {% for class, meta in elements %}
-        <li class="filterItem">
-            <a class="checkContainer chooseElement" data-tags="{{ meta.tags | join(',') | lower }}" title="Choose {{meta.title}} Element" href="{{ path('mapbender_manager_element_new', {'slug': app.request.get('slug'), 'class': meta.class, 'region': region}) }}">
-                <span class="subTitle">{{ meta.title }}</span>
-                <span class="iconOk iconBig"></span>
-                <div class="description">{{ meta.description }}</div>
-                <div class="clearContainer"></div>
-            </a>
-        </li>
-    {% endfor %}
+
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"
+                          id="basic-addon1">{{ "mb.manager.admin.filter.element"|trans }}</span>
+                </div>
+                <input type="text" class="form-control listFilterInput" placeholder="Element Name" aria-label="Username"
+                       aria-describedby="basic-addon1" id="inputFilterElements" name="inputFilterElements">
+            </div>
+
+
+            <ul id="listFilterElements" class="listFilterContainer clear">
+                {% for class, meta in elements %}
+                    <li class="filterItem">
+                        <a class="checkContainer chooseElement" data-tags="{{ meta.tags | join(',') | lower }}"
+                           title="Choose {{ meta.title }} Element"
+                           href="{{ path('mapbender_manager_element_new', {'slug': app.request.get('slug'), 'class': meta.class, 'region': region}) }}">
+                            <span class="subTitle">{{ meta.title }}</span>
+                            <span class="iconOk iconBig"></span>
+                            <div class="description">{{ meta.description }}</div>
+                            <div class="clearContainer"></div>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
 

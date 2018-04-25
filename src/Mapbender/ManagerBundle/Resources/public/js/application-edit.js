@@ -163,8 +163,8 @@ $(function() {
             $.ajax({
                 url: url,
                 type: "GET",
-                complete: function(data) {
-                    if (data != undefined) {
+                success: function(data) {
+                    if (data) {
                         var pop = $(".popup");
                         var popupContent = $(".popupContent");
                         var contentWrapper = pop.find(".contentWrapper");
@@ -188,6 +188,9 @@ $(function() {
                         subContent.on('submit', 'form', submitHandler);
                         subContent.closest(".popupScroll").scrollTop(0);
                     }
+                },
+                error: function(){
+
                 }
             });
         }
@@ -196,11 +199,35 @@ $(function() {
     }
 
     $(".addElement").bind("click", function(event) {
+
         var self = $(this);
         if (popup) {
             popup = popup.destroy();
         }
-        popup = new Mapbender.Popup2({
+
+        $.ajax({
+            url: self.attr("href"),
+            method: 'GET',
+        }).success(function(markup,state){
+            {
+                var dialog = $('<div class="modal fade bd-example-modal-lg" />');
+                dialog.append($(markup));
+                dialog.modal();
+                var curPopup = $(".popup");
+                return false;
+
+                //curPopup.find(".buttonYes, .buttonBack").hide();
+                //curPopup.find(".chooseElement").on("click", loadElementFormular);
+            }
+        }).error(function(){
+            $.notify('Test','error');
+        });
+        return false;
+
+
+
+
+        /*popup = new Mapbender.Popup2({
             title: Mapbender.trans("mb.manager.components.popup.add_element.title"),
             subtitle: " - " + Mapbender.trans(self.parent().siblings(".subTitle").text()),
             closeOnOutsideClick: true,
@@ -246,7 +273,7 @@ $(function() {
                     }
                 }
             }
-        });
+        }); */
 
         var onChange = function(event) {
             $('#elementForm', popup.$element).data('dirty', true);

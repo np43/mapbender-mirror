@@ -12,6 +12,7 @@ use Mapbender\CoreBundle\Component\Template;
 class ManagerTemplate extends Template
 {
     protected static $css = array(
+        '/../vendor/twbs/bootstrap/dist/css/bootstrap.css',
         '@MapbenderManagerBundle/Resources/public/sass/manager/applications.scss',
     );
 
@@ -21,6 +22,7 @@ class ManagerTemplate extends Template
         '/components/datatables/media/js/jquery.dataTables.min.js',
         '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
         '/components/vis-ui.js/vis-ui.js-built.js',
+        '/../vendor/twbs/bootstrap/dist/js/bootstrap.js',
         '/bundles/fosjsrouting/js/router.js',
         '@MapbenderManagerBundle/Resources/public/js/SymfonyAjaxManager.js',
 
