@@ -133,5 +133,10 @@
         <service id="mapbender.presenter.application.cache.backend" class="%mapbender.presenter.application.cache.backend.class%">
             <argument>%kernel.cache_dir%</argument>
         </service>
+        <service id="mapbender.routing_loader" class="Mapbender\CoreBundle\Routing\BundleLoader">
+            <argument type="service" id="service_container" />
+            <tag name="mb.routing.loader" />
+        </service>
+
     </services>
 </container>
