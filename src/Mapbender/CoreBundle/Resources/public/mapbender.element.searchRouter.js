@@ -519,7 +519,11 @@
             });
 
             table.append(tbody);
-            layer.getSource().addFeatures(features);
+
+            var layerSource = layer.getSource();
+            layerSource.addFeatures(features);
+
+            self.map.model.map.addLayer(layer);
 
             $('.search-results tbody tr')
                 .on('click', function () {
@@ -678,6 +682,7 @@
             widget.highlightLayerId = layerId;
             layer = map.model.getVectorLayerByNameId(layerOwner,layerId);
             layer.setSource(markersSource);
+            layer.setStyle(this.styleMap['default']);
 
             return layer;
         },
@@ -716,11 +721,13 @@
             var callbackConf = widget.getCurrentRoute().results.callback;
             var srs = widget.searchModel.get("srs");
             var mapProj = model.getCurrentProjectionCode();
+
             if(srs.projCode !== mapProj.projCode) {
                 featureGeometry = feature.getGeometry();
                 transFeatureGeomtry = featureGeometry.transform(srs, mapProj);
                 feature.setGeometry(transFeatureGeomtry);
             }
+
             var featureExtent = feature.getGeometry().getExtent();
 
             // buffer, if needed
@@ -734,7 +741,6 @@
 
             // get zoom for buffered extent
             var mapSize = model.map.getSize();
-            var mapView = model.map.getView();
             var extent = model.getMapExtent();
             var res = model.getResolutionForExtent(extent, mapSize);
             var zoom = model.getZoomForResolution(res);
@@ -761,17 +767,33 @@
             }
 
             // finally fit to View with zoom and duration of Animation
-            map.model.panToExtent(featureExtent, {duration: 1000, maxZoom: zoom});
+            map.model.panToExtent(featureExtent, {duration: 500, maxZoom: zoom});
 
-            // And highlight new feature TODO Change of Model und Ol4
-            var layer = feature.layer;
-            $.each(layer.selectedFeatures, function(idx, feature) {
-                layer.drawFeature(feature, 'default');
-            });
+            // And highlight new feature
+            // TODO  Feature wird nicht gezeichnet. bsp: https://gis.stackexchange.com/questions/166506/openlayers-3-select-interaction-style-function
+            var layer = feature;
 
-            widget.currentFeature = feature;
-            widget.redraw();
-            layer.selectedFeatures.push(feature);
+
+            if (feature) {
+                //feature.forEach(function(feature){
+                    console.info(feature);
+                    feature.setStyle(this.styleMap['selectStyle']);
+                //});
+            } else {
+                //feature.forEach(function(feature){
+                    console.info(feature);
+                    feature.setStyle(this.styleMap['default']);
+                //});
+            }
+
+            //$.each(layer, function(idx, feature) {
+            //    console.log(feature);
+            //    feature.setStyle();
+            //});
+
+            //widget.currentFeature = feature;
+            //widget.refresh();
+            //layer.selectedFeatures.push(feature);
         },
 
         ready: function(callback) {
