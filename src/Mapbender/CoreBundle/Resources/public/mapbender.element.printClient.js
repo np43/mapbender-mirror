@@ -1,3 +1,8 @@
+
+
+
+
+
 (function($) {
 
     $.widget("mapbender.mbPrintClient",  {
@@ -30,6 +35,8 @@
         },
 
         _setup: function(){
+            this.model = Mapbender.elementRegistry.listWidgets().mapbenderMbMap.model;
+
             var self = this;
             this.elementUrl = Mapbender.configuration.application.urls.element + '/' + this.element.attr('id') + '/';
             this.map = $('#' + this.options.target).data('mapbenderMbMap');
@@ -77,41 +84,41 @@
             if (this.options.type === 'dialog') {
                 if(!this.popup || !this.popup.$element){
                     this.popup = new Mapbender.Popup2({
-                            title: self.element.attr('title'),
-                            draggable: true,
-                            header: true,
-                            modal: false,
-                            closeButton: false,
-                            closeOnESC: false,
-                            content: self.element,
-                            width: 400,
-                            height: 490,
-                            cssClass: 'customPrintDialog',
-                            buttons: {
-                                    'cancel': {
-                                        label: Mapbender.trans('mb.core.printclient.popup.btn.cancel'),
-                                        cssClass: 'button buttonCancel critical right',
-                                        callback: function(){
-                                            self.close();
-                                        }
-                                    },
-                                    'ok': {
-                                        label: Mapbender.trans('mb.core.printclient.popup.btn.ok'),
-                                        cssClass: 'button right',
-                                        callback: function(){
-                                            self._print();
-                                        }
-                                    }
+                        title: self.element.attr('title'),
+                        draggable: true,
+                        header: true,
+                        modal: false,
+                        closeButton: false,
+                        closeOnESC: false,
+                        content: self.element,
+                        width: 400,
+                        height: 490,
+                        cssClass: 'customPrintDialog',
+                        buttons: {
+                            'cancel': {
+                                label: Mapbender.trans('mb.core.printclient.popup.btn.cancel'),
+                                cssClass: 'button buttonCancel critical right',
+                                callback: function(){
+                                    self.close();
+                                }
+                            },
+                            'ok': {
+                                label: Mapbender.trans('mb.core.printclient.popup.btn.ok'),
+                                cssClass: 'button right',
+                                callback: function(){
+                                    self._print();
+                                }
                             }
-                        });
+                        }
+                    });
                     this.popup.$element.on('close', $.proxy(this.close, this));
                 }else{
-                     return;
+                    return;
                 }
                 me.show();
-                this._getTemplateSize();
-                this._updateElements(true);
-                this._setScale();
+                //this._getTemplateSize();
+                //this._updateElements(true);
+                //this._setScale();
             }
         },
 
@@ -163,10 +170,12 @@
         },
 
         _updateGeometry: function(reset) {
-            var width = this.width,
-                height = this.height,
-                scale = this._getPrintScale(),
-                rotationField = $(this.element).find('input[name="rotation"]');
+            var width = this.width;
+            var height = this.height;
+
+            var scale = this._getPrintScale(); alert(scale);
+
+            var rotationField = $(this.element).find('input[name="rotation"]');
 
             // remove all not numbers from input
             rotationField.val(rotationField.val().replace(/[^\d]+/,''));
@@ -179,7 +188,7 @@
 
             if(!(!isNaN(parseFloat(scale)) && isFinite(scale) && scale > 0)) {
                 if(null !== this.lastScale) {
-                //$('input[name="scale_text"]').val(this.lastScale).change();
+                    //$('input[name="scale_text"]').val(this.lastScale).change();
                 }
                 return;
             }
@@ -200,8 +209,8 @@
             };
 
             var center = (reset === true || !this.feature) ?
-            this.map.map.olMap.getCenter() :
-            this.feature.geometry.getBounds().getCenterLonLat();
+                this.map.map.olMap.getCenter() :
+                this.feature.geometry.getBounds().getCenterLonLat();
 
             if(this.feature) {
                 this.layer.removeAllFeatures();
@@ -213,6 +222,7 @@
                 center.lat - 0.5 * world_size.y,
                 center.lon + 0.5 * world_size.x,
                 center.lat + 0.5 * world_size.y).toGeometry(), {});
+
             this.feature.world_size = world_size;
 
             if(this.map.map.olMap.units === 'degrees' || this.map.map.olMap.units === 'dd') {
@@ -305,7 +315,9 @@
 
         _print: function() {
             var form = $('form#formats', this.element);
-            var extent = this._getPrintExtent();
+
+
+            //var extent = this._getPrintExtent();
 
             // Felder für extent, center und layer dynamisch einbauen
             var fields = $();
@@ -313,44 +325,44 @@
             $.merge(fields, $('<input />', {
                 type: 'hidden',
                 name: 'extent[width]',
-                value: extent.extent.width
+                value: 4750//extent.extent.width
             }));
 
             $.merge(fields, $('<input />', {
                 type: 'hidden',
                 name: 'extent[height]',
-                value: extent.extent.height
+                value: 5925//extent.extent.height
             }));
 
             $.merge(fields, $('<input />', {
                 type: 'hidden',
                 name: 'center[x]',
-                value: extent.center.x
+                value: 366075 //extent.center.x
             }));
 
             $.merge(fields, $('<input />', {
                 type: 'hidden',
                 name: 'center[y]',
-                value: extent.center.y
+                value: 5622000//extent.center.y
             }));
 
             // extent feature
-            var feature_coords = new Array();
-            var feature_comp = this.feature.geometry.components[0].components;
-            for(var i = 0; i < feature_comp.length-1; i++) {
-                feature_coords[i] = new Object();
-                feature_coords[i]['x'] = feature_comp[i].x;
-                feature_coords[i]['y'] = feature_comp[i].y;
-            }
+            /*            var feature_coords = new Array();
+                        var feature_comp = this.feature.geometry.components[0].components;
+                        for(var i = 0; i < feature_comp.length-1; i++) {
+                            feature_coords[i] = new Object();
+                            feature_coords[i]['x'] = feature_comp[i].x;
+                            feature_coords[i]['y'] = feature_comp[i].y;
+                        }*/
 
             $.merge(fields, $('<input />', {
                 type: 'hidden',
                 name: 'extent_feature',
-                value: JSON.stringify(feature_coords)
+                value: JSON.stringify([{"x":363700,"y":5619037.5},{"x":368450,"y":5619037.5},{"x":368450,"y":5624962.5},{"x":363700,"y":5624962.5}]) //JSON.stringify(feature_coords)
             }));
 
             // wms layer
-            var sources = this.map.getSourceTree(), lyrCount = 0;
+            //var sources = this.map.getSourceTree(), lyrCount = 0;
 
             function _getLegends(layer) {
                 var legend = null;
@@ -373,133 +385,173 @@
             }
             var legends = [];
 
-            for (var i = 0; i < sources.length; i++) {
-                var layer = this.map.map.layersList[sources[i].mqlid],
-                        type = layer.olLayer.CLASS_NAME;
+            /*            for (var i = 0; i < sources.length; i++) {
+                            var layer = this.map.map.layersList[sources[i].mqlid],
+                                    type = layer.olLayer.CLASS_NAME;
 
-                if (0 !== type.indexOf('OpenLayers.Layer.')) {
-                    continue;
-                }
-
-                if (Mapbender.source[sources[i].type] && typeof Mapbender.source[sources[i].type].getPrintConfig === 'function') {
-                    var source = sources[i],
-                            scale = this._getPrintScale(),
-                            toChangeOpts = {options: {children: {}}, sourceIdx: {mqlid: source.mqlid}};
-                    var visLayers = Mapbender.source[source.type].changeOptions(source, scale, toChangeOpts);
-                    if (visLayers.layers.length > 0) {
-                        var prevLayers = layer.olLayer.params.LAYERS;
-                        var prevStyles = layer.olLayer.params.STYLES;
-                        layer.olLayer.params.LAYERS = visLayers.layers;
-                        layer.olLayer.params.STYLES = visLayers.styles;
-
-                        var opacity = sources[i].configuration.options.opacity;
-                        var lyrConf = Mapbender.source[sources[i].type].getPrintConfig(layer.olLayer, this.map.map.olMap.getExtent(), sources[i].configuration.options.proxy);
-                        lyrConf.opacity = opacity;
-
-                        // flag to change axis order
-                        lyrConf.changeAxis = this._changeAxis(layer.olLayer);
-
-                        $.merge(fields, $('<input />', {
-                            type: 'hidden',
-                            name: 'layers[' + lyrCount + ']',
-                            value: JSON.stringify(lyrConf),
-                            weight: this.map.map.olMap.getLayerIndex(layer.olLayer)
-                        }));
-                        layer.olLayer.params.LAYERS = prevLayers;
-                        layer.olLayer.params.STYLES = prevStyles;
-                        lyrCount++;
-
-                        if (sources[i].type === 'wms') {
-                            var ll = _getLegends(sources[i].configuration.children[0]);
-                            if (ll) {
-                                legends.push(ll);
+                            if (0 !== type.indexOf('OpenLayers.Layer.')) {
+                                continue;
                             }
-                        }
-                    }
-                }
-            }
 
-            //legend
-            if($('input[name="printLegend"]',form).prop('checked')){
-                $.merge(fields, $('<input />', {
-                    type: 'hidden',
-                    name: 'legends',
-                    value: JSON.stringify(legends)
-                }));
-            }
+                            if (Mapbender.source[sources[i].type] && typeof Mapbender.source[sources[i].type].getPrintConfig === 'function') {
+                                var source = sources[i],
+                                        scale = this._getPrintScale(),
+                                        toChangeOpts = {options: {children: {}}, sourceIdx: {mqlid: source.mqlid}};
+                                var visLayers = Mapbender.source[source.type].changeOptions(source, scale, toChangeOpts);
+                                if (visLayers.layers.length > 0) {
+                                    var prevLayers = layer.olLayer.params.LAYERS;
+                                    var prevStyles = layer.olLayer.params.STYLES;
+                                    layer.olLayer.params.LAYERS = visLayers.layers;
+                                    layer.olLayer.params.STYLES = visLayers.styles;
 
-            // Iterating over all vector layers, not only the ones known to MapQuery
-            var geojsonFormat = new OpenLayers.Format.GeoJSON();
-            for(var i = 0; i < this.map.map.olMap.layers.length; i++) {
-                var layer = this.map.map.olMap.layers[i];
-                if ('OpenLayers.Layer.Vector' !== layer.CLASS_NAME || layer.visibility === false || this.layer === layer) {
+                                    var opacity = sources[i].configuration.options.opacity;
+                                    var lyrConf = Mapbender.source[sources[i].type].getPrintConfig(layer.olLayer, this.map.map.olMap.getExtent(), sources[i].configuration.options.proxy);
+                                    lyrConf.opacity = opacity;
+
+                                    // flag to change axis order
+                                    lyrConf.changeAxis = this._changeAxis(layer.olLayer);
+
+                                    $.merge(fields, $('<input />', {
+                                        type: 'hidden',
+                                        name: 'layers[' + lyrCount + ']',
+                                        value: JSON.stringify(lyrConf),
+                                        weight: this.map.map.olMap.getLayerIndex(layer.olLayer)
+                                    }));
+                                    layer.olLayer.params.LAYERS = prevLayers;
+                                    layer.olLayer.params.STYLES = prevStyles;
+                                    lyrCount++;
+
+                                    if (sources[i].type === 'wms') {
+                                        var ll = _getLegends(sources[i].configuration.children[0]);
+                                        if (ll) {
+                                            legends.push(ll);
+                                        }
+                                    }
+                                }
+                            }
+                        }*/
+
+            var mapSize = this.model.getMapSize();
+            var mapExtent = this.model.getMapExtent();
+
+
+            // source layer stuff.
+            var activeSources = this.model.getActiveSources();
+            for (var i = 0; i < activeSources.length; i++) {
+                var source = activeSources[i];
+                if (!source.isVisible()) {
                     continue;
                 }
-
-                var geometries = [];
-                for(var idx = 0; idx < layer.features.length; idx++) {
-                    var feature = layer.features[idx];
-                    if (!feature.onScreen(true)) continue
-
-                    if(this.feature.geometry.intersects(feature.geometry)){
-                        var geometry = geojsonFormat.extract.geometry.apply(geojsonFormat, [feature.geometry]);
-
-                        if(feature.style !== null){
-                            geometry.style = feature.style;
-                        }else{
-                            geometry.style = layer.styleMap.createSymbolizer(feature,feature.renderIntent);
-                        }
-                        // only visible features
-                        if(geometry.style.fillOpacity > 0 && geometry.style.strokeOpacity > 0){
-                            geometries.push(geometry);
-                        } else if (geometry.style.label !== undefined){
-                            geometries.push(geometry);
-                        }
-                    }
-                }
-
-                var lyrConf = {
-                    type: 'GeoJSON+Style',
-                    opacity: 1,
-                    geometries: geometries
-                };
-
-                $.merge(fields, $('<input />', {
-                    type: 'hidden',
-                    name: 'layers[' + (lyrCount + i) + ']',
-                    value: JSON.stringify(lyrConf),
-                    weight: this.map.map.olMap.getLayerIndex(layer)
-                }));
-            }
-
-            // overview map
-            var ovMap = this.map.map.olMap.getControlsByClass('OpenLayers.Control.OverviewMap')[0],
-            count = 0;
-            if (undefined !== ovMap){
-                for(var i = 0; i < ovMap.layers.length; i++) {
-                    var url = ovMap.layers[i].getURL(ovMap.map.getExtent());
-                    var extent = ovMap.map.getExtent();
-                    var mwidth = extent.getWidth();
-                    var size = ovMap.size;
-                    var width = size.w;
-                    var res = mwidth / width;
-                    var scale = Math.round(OpenLayers.Util.getScaleFromResolution(res,'m'));
-
-                    var overview = {};
-                    overview.url = url;
-                    overview.scale = scale;
-
-                    // flag to change axis order
-                    overview.changeAxis = this._changeAxis(ovMap.layers[i]);
+                var printConfig = this.model.getSourcePrintConfig(activeSources[i], mapExtent, mapSize);
+                if (printConfig) {
+                    printConfig.changeAxis = false;  //@todo
 
                     $.merge(fields, $('<input />', {
                         type: 'hidden',
-                        name: 'overview[' + count + ']',
-                        value: JSON.stringify(overview)
+                        name: 'layers[' + i + ']',
+                        value: JSON.stringify(printConfig),
+                        weight: 1//this.map.map.olMap.getLayerIndex(layer.olLayer) //@todo darf diese x-beliebig sein?
                     }));
-                    count++;
                 }
             }
+
+
+            //legend
+            /*            if($('input[name="printLegend"]',form).prop('checked')){
+                            $.merge(fields, $('<input />', {
+                                type: 'hidden',
+                                name: 'legends',
+                                value: JSON.stringify(legends)
+                            }));
+                        }*/
+
+            // vector sources/layers stuff.
+            var printStyleOptions = this.model.getVectorLayerPrintStyleOptions();
+            var geojsonFormat = this.model.createOlFormatGeoJSON();
+            var allFeatures = this.model.getVectorLayerFeatures();
+            for (var owner in allFeatures) {
+                for (var uuid in allFeatures[owner]) {
+                    var features = allFeatures[owner][uuid];
+                    if (!features) {
+                        continue;
+                    }
+                    var geometries = [];
+                    for (var idx = 0; idx < features.length; idx++) {
+                        var geometry = geojsonFormat.writeGeometryObject( features[ idx ].getGeometry(), geojsonFormat );
+                        if (geometry) {   // @todo  if(this.feature.geometry.intersects(feature.geometry)){
+                            var styleOptions = {};
+                            if (printStyleOptions.hasOwnProperty(owner) && printStyleOptions[owner].hasOwnProperty(uuid)) {
+                                styleOptions = printStyleOptions[owner][uuid];
+                            }
+
+                            geometry.style = styleOptions;
+                            geometries.push(geometry);
+                        }
+                    }
+
+                    var layerOpacity = 1;
+                    if (this.model.vectorLayer.hasOwnProperty(owner)
+                        && this.model.vectorLayer[owner].hasOwnProperty(uuid )
+                    ) {
+                        layerOpacity = this.model.vectorLayer[owner][uuid].getOpacity()
+                    }
+
+                    var objectForVectorLayers = {
+                        'type': 'GeoJSON+Style',
+                        'opacity': layerOpacity,
+                        'geometries': geometries
+                    };
+
+                    $.merge(fields, $('<input />', {
+                        type: 'hidden',
+                        name: 'layers[' + uuid + ']',
+                        value: JSON.stringify(objectForVectorLayers),
+                        weight: 1//this.map.map.olMap.getLayerIndex(layer.olLayer) //@todo
+                    }));
+                }
+            }
+
+            // overview map
+            /*            var ovMap = this.map.map.olMap.getControlsByClass('OpenLayers.Control.OverviewMap')[0],
+                        count = 0;
+                        if (undefined !== ovMap){
+                            for(var i = 0; i < ovMap.layers.length; i++) {
+                                var url = ovMap.layers[i].getURL(ovMap.map.getExtent());
+                                var extent = ovMap.map.getExtent();
+                                var mwidth = extent.getWidth();
+                                var size = ovMap.size;
+                                var width = size.w;
+                                var res = mwidth / width;
+                                var scale = Math.round(OpenLayers.Util.getScaleFromResolution(res,'m'));
+
+                                var overview = {};
+                                overview.url = url;
+                                overview.scale = scale;
+
+                                // flag to change axis order
+                                overview.changeAxis = this._changeAxis(ovMap.layers[i]);
+
+                                $.merge(fields, $('<input />', {
+                                    type: 'hidden',
+                                    name: 'overview[' + count + ']',
+                                    value: JSON.stringify(overview)
+                                }));
+                                count++;
+                            }
+                        }*/
+
+
+            var overview = {
+                "url":"https://osm-demo.wheregroup.com/service?_signature=39%3AHL5w_GiWotDc_Q6-oGglKsUdG3I&VERSION=1.3.0&LAYERS=osm&FORMAT=image%2Fpng&TRANSPARENT=TRUE&EXCEPTIONS=INIMAGE&SERVICE=WMS&REQUEST=GetMap&STYLES=&CRS=EPSG%3A25832&BBOX=362165.47986754,5618930.4841932,369984.52013246,5625069.5158068&WIDTH=300&HEIGHT=150",
+                "scale":139625,
+                "changeAxis":false
+            };
+
+            $.merge(fields, $('<input />', {
+                type: 'hidden',
+                name: 'overview[0]',
+                value: JSON.stringify(overview)
+            }));
 
             $('div#layers', form).empty();
             fields.appendTo(form.find('div#layers'));
@@ -511,6 +563,7 @@
             form.attr('target', '_blank');
             form.attr('method', 'post');
 
+            lyrCount = ['bla']; //@todo
             if (lyrCount === 0){
                 Mapbender.info(Mapbender.trans('mb.core.printclient.info.noactivelayer'));
             }else{
