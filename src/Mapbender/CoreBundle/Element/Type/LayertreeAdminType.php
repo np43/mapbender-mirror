@@ -3,17 +3,20 @@ namespace Mapbender\CoreBundle\Element\Type;
 
 use Mapbender\CoreBundle\Element\EventListener\LayertreeSubscriber;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * LayertreeAdminType
+ * Class LayertreeAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class LayertreeAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -21,7 +24,7 @@ class LayertreeAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -31,43 +34,44 @@ class LayertreeAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $subscriber = new LayertreeSubscriber($builder->getFormFactory(), $options['application']);
         $builder->addEventSubscriber($subscriber);
-        $builder->add('target', 'target_element', array(
+        $builder->add('target', TargetElementType::class, array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('type', 'choice', array(
+            ->add('type', ChoiceType::class, array(
                 'required' => true,
                 'choices' => array(
                     'element' => 'Element',
                     'dialog' => 'Dialog')))
-            ->add('autoOpen', 'checkbox', array(
+            ->add('autoOpen', CheckboxType::class, array(
                 'required' => false))
-            ->add('useTheme', 'checkbox', array(
+            ->add('useTheme', CheckboxType::class, array(
                 'required' => false))
-            ->add('displaytype', 'choice', array(
+            ->add('displaytype', ChoiceType::class, array(
                 'required' => true,
                 'choices' => array('tree' => 'Tree')))
-            ->add('titlemaxlength', 'text', array(
+            ->add('titlemaxlength', TextType::class, array(
                 'required' => true))
-            ->add('showBaseSource', 'checkbox', array(
+            ->add('showBaseSource', CheckboxType::class, array(
                 'required' => false))
-            ->add('showHeader', 'checkbox', array(
+            ->add('showHeader', CheckboxType::class, array(
                 'required' => false))
-            ->add('hideInfo', 'checkbox', array(
+            ->add('hideInfo', CheckboxType::class, array(
                 'required' => false))
-            ->add('hideNotToggleable', 'checkbox', array(
+            ->add('hideNotToggleable', CheckboxType::class, array(
                 'required' => false))
-            ->add('hideSelect', 'checkbox', array(
+            ->add('hideSelect', CheckboxType::class, array(
                 'required' => false))
             // see LayerTreeMenuType.php
-            ->add('menu', 'layertree_menu', array(
+            ->add('menu', LayerTreeMenuType::class, array(
                 'required' => false,
             ))
         ;

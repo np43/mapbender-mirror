@@ -2,17 +2,18 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * 
+ * Class ActivityIndicatorAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class ActivityIndicatorAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +21,7 @@ class ActivityIndicatorAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,14 +31,14 @@ class ActivityIndicatorAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('activityClass', 'text', array('required' => false))
-            ->add('ajaxActivityClass', 'text', array('required' => false))
-            ->add('tileActivityClass', 'text', array('required' => false));
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('activityClass', TextType::class, array('required' => false))
+            ->add('ajaxActivityClass', TextType::class, array('required' => false))
+            ->add('tileActivityClass', TextType::class, array('required' => false));
     }
-
 }

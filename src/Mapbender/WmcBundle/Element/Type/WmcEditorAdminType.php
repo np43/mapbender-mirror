@@ -2,20 +2,21 @@
 
 namespace Mapbender\WmcBundle\Element\Type;
 
+use Mapbender\CoreBundle\Element\Type\TargetElementType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Description of WmcEditorAdminType
- *
- * @author Paul Schmidt
+ * Class WmcEditorAdminType
+ * @package Mapbender\WmcBundle\Element\Type
  */
 class WmcEditorAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -35,14 +36,15 @@ class WmcEditorAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
+        $builder->add('tooltip', TextType::class, array('required' => false))
             ->add(
                 'target',
-                'target_element',
+                TargetElementType::class,
                 array(
                     'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                     'application' => $options['application'],
@@ -50,19 +52,8 @@ class WmcEditorAdminType extends AbstractType
                     'required' => false
                 )
             )
-            ->add(
-                'width',
-                'integer',
-                array(
-                    'required' => false
-                )
+            ->add('width', IntegerType::class, array('required' => false)
             )
-            ->add(
-                'height',
-                'integer',
-                array(
-                    'required' => false
-                )
-            );
+            ->add('height', IntegerType::class, array('required' => false));
     }
 }

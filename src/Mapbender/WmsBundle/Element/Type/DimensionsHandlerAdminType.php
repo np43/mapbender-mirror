@@ -3,32 +3,36 @@
 namespace Mapbender\WmsBundle\Element\Type;
 
 use Mapbender\CoreBundle\Component\ExtendedCollection;
+use Mapbender\CoreBundle\Element\Type\TargetElementType;
 use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Entity\Layerset;
 use Mapbender\CoreBundle\Utils\ArrayUtil;
 use Mapbender\WmsBundle\Component\DimensionInst;
 use Mapbender\WmsBundle\Entity\WmsInstance;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Description of WmsLoaderAdminType
- *
- * @author Paul Schmidt
+ * Class DimensionsHandlerAdminType
+ * @package Mapbender\WmsBundle\Element\Type
  */
 class DimensionsHandlerAdminType extends AbstractType implements ExtendedCollection
 {
-
     public $hasSubForm = true;
 
+    /**
+     * @return bool
+     */
     public function isSubForm()
     {
         return $this->hasSubForm;
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -36,7 +40,7 @@ class DimensionsHandlerAdminType extends AbstractType implements ExtendedCollect
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -47,7 +51,8 @@ class DimensionsHandlerAdminType extends AbstractType implements ExtendedCollect
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -63,10 +68,10 @@ class DimensionsHandlerAdminType extends AbstractType implements ExtendedCollect
             }
         }
         $builder
-            ->add('tooltip', 'text', array(
+            ->add('tooltip', TextType::class, array(
                 'required' => false,
             ))
-            ->add('target', 'target_element', array(
+            ->add('target', TargetElementType::class, array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
@@ -75,7 +80,7 @@ class DimensionsHandlerAdminType extends AbstractType implements ExtendedCollect
         ;
         if ($dimensions) {
             $builder
-                ->add('dimensionsets', "collection", array(
+                ->add('dimensionsets', CollectionType::class, array(
                     'type' => new DimensionSetAdminType(),
                     'allow_add' => true,
                     'allow_delete' => true,

@@ -3,6 +3,8 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -12,9 +14,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class POIAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -22,7 +23,7 @@ class POIAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -32,17 +33,18 @@ class POIAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('tooltip', 'text', array('required' => false))
-            ->add('useMailto', 'checkbox', array('required' => false))
-            ->add('body', 'text', array('required' => true))
+            ->add('tooltip', TextType::class, array('required' => false))
+            ->add('useMailto', CheckboxType::class, array('required' => false))
+            ->add('body', TextType::class, array('required' => true))
             ->add(
                 'gps',
-                'target_element',
+                TargetElementType::class,
                 array(
                     'element_class' => 'Mapbender\\CoreBundle\\Element\\GpsPosition',
                     'application' => $options['application'],
@@ -52,7 +54,7 @@ class POIAdminType extends AbstractType
             )
             ->add(
                 'target',
-                'target_element',
+                TargetElementType::class,
                 array(
                     'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                     'application' => $options['application'],

@@ -2,17 +2,21 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- *
+ * Class FeatureInfoAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class FeatureInfoAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +24,7 @@ class FeatureInfoAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,28 +34,29 @@ class FeatureInfoAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('type', 'choice', array(
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('type', ChoiceType::class, array(
                 'required' => true,
                 'choices' => array('dialog' => 'Dialog', 'element' => 'Element')))
-            ->add('displayType', 'choice', array(
+            ->add('displayType', ChoiceType::class, array(
                 'required' => true,
                 'choices' => array('tabs' => 'Tabs', 'accordion' => 'Accordion')))
-            ->add('autoActivate', 'checkbox', array('required' => false))
-            ->add('printResult', 'checkbox', array('required' => false))
-            ->add('deactivateOnClose', 'checkbox', array('required' => false))
-            ->add('showOriginal', 'checkbox', array('required' => false))
-            ->add('onlyValid', 'checkbox', array('required' => false))
-            ->add('target', 'target_element', array(
+            ->add('autoActivate', CheckboxType::class, array('required' => false))
+            ->add('printResult', CheckboxType::class, array('required' => false))
+            ->add('deactivateOnClose', CheckboxType::class, array('required' => false))
+            ->add('showOriginal', CheckboxType::class, array('required' => false))
+            ->add('onlyValid', CheckboxType::class, array('required' => false))
+            ->add('target', TargetElementType::class, array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('width', 'integer', array('required' => true))
-            ->add('height', 'integer', array('required' => true));
+            ->add('width', IntegerType::class, array('required' => true))
+            ->add('height', IntegerType::class, array('required' => true));
     }
 }

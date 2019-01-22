@@ -14,12 +14,14 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
 
 /**
+ * Class TargetElementType
+ * @package Mapbender\CoreBundle\Element\Type
+ *
  * Choice-style form element for picking an element's "target" element (this is used e.g. for a generic Button
  * controlling a functional Element like a FeatureInfo).
  */
 class TargetElementType extends AbstractType
 {
-
     /**
      * ContainerInterface
      * @var ContainerInterface Container
@@ -27,7 +29,8 @@ class TargetElementType extends AbstractType
     protected $container;
 
     /**
-     * @inheritdoc
+     * TargetElementType constructor.
+     * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
     {
@@ -35,7 +38,7 @@ class TargetElementType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return ContainerInterface
      */
     public function getContainer()
     {
@@ -43,7 +46,7 @@ class TargetElementType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -51,7 +54,7 @@ class TargetElementType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
      */
     public function getParent()
     {
@@ -59,7 +62,7 @@ class TargetElementType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -126,7 +129,8 @@ class TargetElementType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -135,6 +139,11 @@ class TargetElementType extends AbstractType
         $builder->addModelTransformer($transformer);
     }
 
+    /**
+     * @param FormView $view
+     * @param FormInterface $form
+     * @param array $options
+     */
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
         /** @var \Symfony\Component\Translation\TranslatorInterface $translator */
@@ -149,5 +158,4 @@ class TargetElementType extends AbstractType
         // see https://bugs.php.net/bug.php?id=50688
         array_multisort($view->vars['choices'], $translatedLcLabels);
     }
-
 }

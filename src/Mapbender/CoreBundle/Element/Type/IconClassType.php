@@ -2,25 +2,36 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * Class IconClassType
+ * @package Mapbender\CoreBundle\Element\Type
+ */
 class IconClassType extends AbstractType
 {
+    /**
+     * @return string
+     */
     public function getName()
     {
         return 'iconclass';
     }
 
+    /**
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
+     */
     public function getParent()
     {
         return 'choice';
     }
 
+    /**
+     * @param OptionsResolver $resolver
+     */
     public function configureOptions(OptionsResolver $resolver)
     {
         $icons = array(
-
             // Mapbender Icons
             'icon-layer-tree'   => 'Layer tree',
             'icon-feature-info' => 'Feature Info',

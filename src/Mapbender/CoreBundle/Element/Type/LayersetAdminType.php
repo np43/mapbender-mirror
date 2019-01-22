@@ -9,18 +9,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Mapbender\CoreBundle\Form\DataTransformer\ObjectIdTransformer;
 
 /**
- * 
+ * Class LayersetAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class LayersetAdminType extends AbstractType
 {
-    /**
-     *
-     * @var type 
-     */
     protected $container;
 
     /**
-     * @inheritdoc
+     * LayersetAdminType constructor.
+     * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
     {
@@ -28,7 +26,7 @@ class LayersetAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return ContainerInterface
      */
     public function getContainer()
     {
@@ -36,7 +34,7 @@ class LayersetAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -44,7 +42,7 @@ class LayersetAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
      */
     public function getParent()
     {
@@ -52,7 +50,7 @@ class LayersetAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -71,7 +69,8 @@ class LayersetAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -80,5 +79,4 @@ class LayersetAdminType extends AbstractType
             'MapbenderCoreBundle:Layerset');
         $builder->addModelTransformer($transformer);
     }
-
 }

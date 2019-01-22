@@ -3,12 +3,18 @@
 namespace Mapbender\CoreBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 
+/**
+ * Class StateType
+ * @package Mapbender\CoreBundle\Form\Type
+ */
 class StateType extends AbstractType
 {
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -16,15 +22,16 @@ class StateType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add("id", "hidden", array("required" => false))
-                ->add("serverurl", "hidden", array("required" => true))
-                ->add("slug", "hidden", array("required" => true))
-                ->add("json", "hidden", array("required" => true))
-                ->add("title", "text", array("required" => true));
+        $builder->add("id", HiddenType::class, array("required" => false))
+                ->add("serverurl", HiddenType::class, array("required" => true))
+                ->add("slug", HiddenType::class, array("required" => true))
+                ->add("json", HiddenType::class, array("required" => true))
+                ->add("title", TextType::class, array("required" => true));
     }
 }
 

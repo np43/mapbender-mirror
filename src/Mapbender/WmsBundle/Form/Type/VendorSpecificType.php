@@ -4,18 +4,21 @@ namespace Mapbender\WmsBundle\Form\Type;
 
 use Mapbender\WmsBundle\Form\DataTransformer\VendorSpecificTransformer;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Mapbender\WmsBundle\Component\VendorSpecific as VS;
 
 /**
- * VendorSpecificInstType class
+ * Class VendorSpecificType
+ * @package Mapbender\WmsBundle\Form\Type
  */
 class VendorSpecificType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -23,7 +26,7 @@ class VendorSpecificType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -35,12 +38,13 @@ class VendorSpecificType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('vstype', 'choice', array(
+            ->add('vstype', ChoiceType::class, array(
                 'required' => true,
                 'choices' => array(
                     VS::TYPE_VS_SIMPLE => VS::TYPE_VS_SIMPLE,
@@ -48,17 +52,16 @@ class VendorSpecificType extends AbstractType
                     VS::TYPE_VS_GROUP => VS::TYPE_VS_GROUP
                 ),
             ))
-            ->add('name', 'text', array(
+            ->add('name', TextType::class, array(
                 'required' => true,
             ))
-            ->add('default', 'text', array(
+            ->add('default', TextType::class, array(
                 'required' => true,
             ))
-            ->add('hidden', 'checkbox', array(
+            ->add('hidden', CheckboxType::class, array(
                 'required' => false,
             ))
             ->addModelTransformer(new VendorSpecificTransformer())
         ;
     }
-
 }

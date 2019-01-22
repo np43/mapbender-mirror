@@ -26,6 +26,7 @@ use Mapbender\ManagerBundle\Form\Type\ApplicationType;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Form;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -794,7 +795,7 @@ class ApplicationController extends WelcomeController
     private function createDeleteForm($id)
     {
         return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'hidden')
+                ->add('id', HiddenType::class)
                 ->getForm();
     }
 

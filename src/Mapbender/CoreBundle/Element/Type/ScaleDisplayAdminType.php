@@ -2,17 +2,20 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * 
+ * Class ScaleDisplayAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class ScaleDisplayAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +23,7 @@ class ScaleDisplayAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,21 +33,22 @@ class ScaleDisplayAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('target', 'target_element',
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('target', TargetElementType::class,
                 array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('scalePrefix', 'text',
+            ->add('scalePrefix', TextType::class,
                 array('required' => false, 'trim' => false))
-            ->add('unitPrefix', 'checkbox', array('required' => false))
-            ->add('anchor', "choice",
+            ->add('unitPrefix', CheckboxType::class, array('required' => false))
+            ->add('anchor', ChoiceType::class,
                 array(
                 'required' => true,
                 "choices" => array(
@@ -53,5 +57,4 @@ class ScaleDisplayAdminType extends AbstractType
                     'right-top' => 'right-top',
                     'right-bottom' => 'right-bottom')));
     }
-
 }

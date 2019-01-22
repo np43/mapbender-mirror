@@ -2,17 +2,21 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * 
+ * Class CoordinatesDisplayAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class CoordinatesDisplayAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +24,7 @@ class CoordinatesDisplayAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,12 +34,13 @@ class CoordinatesDisplayAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('anchor', "choice",
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('anchor', ChoiceType::class,
                 array(
                 'required' => true,
                 "choices" => array(
@@ -43,19 +48,18 @@ class CoordinatesDisplayAdminType extends AbstractType
                     'left-bottom' => 'left-bottom',
                     'right-top' => 'right-top',
                     'right-bottom' => 'right-bottom')))
-            ->add('numDigits', 'integer', array('required' => true))
-            ->add('label', 'checkbox', array('required' => false))
-            ->add('target', 'target_element',
+            ->add('numDigits', IntegerType::class, array('required' => true))
+            ->add('label', CheckboxType::class, array('required' => false))
+            ->add('target', TargetElementType::class,
                 array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('empty', 'text', array('required' => false, "trim" => false))
-            ->add('prefix', 'text', array('required' => false, "trim" => false))
-            ->add('separator', 'text',
+            ->add('empty', TextType::class, array('required' => false, "trim" => false))
+            ->add('prefix', TextType::class, array('required' => false, "trim" => false))
+            ->add('separator', TextType::class,
                 array('required' => false, "trim" => false))
         ;
     }
-
 }

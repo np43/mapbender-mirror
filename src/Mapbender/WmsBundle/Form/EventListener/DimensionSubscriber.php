@@ -4,6 +4,10 @@ namespace Mapbender\WmsBundle\Form\EventListener;
 
 use Mapbender\WmsBundle\Component\DimensionInst;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormEvent;
@@ -47,22 +51,23 @@ class DimensionSubscriber implements EventSubscriberInterface
     protected function addFields($form, $data)
     {
         $isVordefined = $data && $data->getOrigextent();
-        $form->add('creator', 'hidden',  array(
+
+        $form->add('creator', HiddenType::class,  array(
                 'auto_initialize' => false,
                 'read_only' => $isVordefined,
                 'required' => true,
             ))
-            ->add('type', 'hidden', array(
+            ->add('type', HiddenType::class, array(
                 'auto_initialize' => false,
                 'read_only' => $isVordefined,
                 'required' => true,
             ))
-            ->add('name', 'text', array(
+            ->add('name', TextType::class, array(
                 'auto_initialize' => false,
                 'read_only' => $isVordefined,
                 'required' => true,
             ))
-            ->add('units', 'text', array(
+            ->add('units', TextType::class, array(
                 'auto_initialize' => false,
                 'read_only' => $isVordefined,
                 'required' => false,
@@ -70,7 +75,7 @@ class DimensionSubscriber implements EventSubscriberInterface
                     'data-name' => 'units',
                 ),
             ))
-            ->add('unitSymbol', 'text', array(
+            ->add('unitSymbol', TextType::class, array(
                 'auto_initialize' => false,
                 'read_only' => $isVordefined,
                 'required' => false,
@@ -78,17 +83,17 @@ class DimensionSubscriber implements EventSubscriberInterface
                     'data-name' => 'unitSymbol',
                 ),
             ))
-            ->add('multipleValues', 'checkbox', array(
+            ->add('multipleValues', CheckboxType::class, array(
                 'auto_initialize' => false,
                 'disabled' => $isVordefined,
                 'required' => false,
             ))
-            ->add('nearestValue', 'checkbox', array(
+            ->add('nearestValue', CheckboxType::class, array(
                 'auto_initialize' => false,
                 'disabled' => $isVordefined,
                 'required' => false,
             ))
-            ->add('current', 'checkbox', array(
+            ->add('current', CheckboxType::class, array(
                 'auto_initialize' => false,
                 'disabled' => $isVordefined,
                 'required' => false,
@@ -104,7 +109,7 @@ class DimensionSubscriber implements EventSubscriberInterface
         }
             if ($data->getType() === $data::TYPE_SINGLE) {
                 $form
-                    ->add('extentEdit', 'text', array(
+                    ->add('extentEdit', TextType::class, array(
                         'required' => true,
                         'auto_initialize' => false,
                     ))
@@ -112,7 +117,7 @@ class DimensionSubscriber implements EventSubscriberInterface
             } elseif ($data->getType() === $data::TYPE_MULTIPLE) {
                 $choices = array_combine($dataOrigArr, $dataOrigArr);
                 $form
-                    ->add('extentEdit', 'choice', array(
+                    ->add('extentEdit', ChoiceType::class, array(
                         'data' => $dataArr,
                         'mapped' => false,
                         'choices' => $choices,
@@ -120,18 +125,18 @@ class DimensionSubscriber implements EventSubscriberInterface
                         'multiple' => true,
                         'required' => true,
                     ))
-                    ->add('default', 'choice', array(
+                    ->add('default', ChoiceType::class, array(
                         'choices' => $choices,
                         'auto_initialize' => false,
                     ))
                 ;
             } elseif ($data->getType() === $data::TYPE_INTERVAL) {
                 $form
-                    ->add('extentEdit', 'text', array(
+                    ->add('extentEdit', TextType::class, array(
                         'required' => true,
                         'auto_initialize' => false,
                     ))
-                    ->add('default', 'text', array(
+                    ->add('default', TextType::class, array(
                         'auto_initialize' => false,
                         'read_only' => $isVordefined,
                         'required' => false,
@@ -147,7 +152,7 @@ class DimensionSubscriber implements EventSubscriberInterface
     protected function addExtentFields($form, $data)
     {
         $form
-            ->add('extent', 'hidden', array(
+            ->add('extent', HiddenType::class, array(
                 'required' => true,
                 'auto_initialize' => false,
                 'attr' => array(
@@ -155,7 +160,7 @@ class DimensionSubscriber implements EventSubscriberInterface
                     'data-name' => 'extent',
                 ),
             ))
-            ->add('origextent', 'hidden', array(
+            ->add('origextent', HiddenType::class, array(
                 'required' => true,
                 'auto_initialize' => false,
                 'mapped' => false,
@@ -168,7 +173,7 @@ class DimensionSubscriber implements EventSubscriberInterface
 
         $dimJs = $data->getConfiguration();
         $form
-            ->add('json', 'hidden', array(
+            ->add('json', HiddenType::class, array(
                 'required' => true,
                 'data' => json_encode($dimJs),
                 'auto_initialize' => false,

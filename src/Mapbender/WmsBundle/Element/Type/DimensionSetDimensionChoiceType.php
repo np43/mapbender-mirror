@@ -1,21 +1,29 @@
 <?php
 
-
 namespace Mapbender\WmsBundle\Element\Type;
-
 
 use Mapbender\WmsBundle\Component\DimensionInst;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * Class DimensionSetDimensionChoiceType
+ * @package Mapbender\WmsBundle\Element\Type
+ */
 class DimensionSetDimensionChoiceType extends AbstractType
 {
+    /**
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
+     */
     public function getParent()
     {
         return 'choice';
     }
 
+    /**
+     * @param OptionsResolver $resolver
+     */
     public function configureOptions(OptionsResolver $resolver)
     {
         // NOTE: `use ($this)` not allowed in PHP lambda definitions...

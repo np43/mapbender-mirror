@@ -5,6 +5,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Mapbender\CoreBundle\Component\ElementFactory;
 use Mapbender\ManagerBundle\Component\ElementFormFactory;
 use Mapbender\ManagerBundle\Utils\WeightSortedCollectionUtil;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
@@ -504,7 +505,7 @@ class ElementController extends Controller
     private function createDeleteForm($id)
     {
         return $this->createFormBuilder(array('id' => $id))
-                ->add('id', 'hidden')
+                ->add('id', HiddenType::class)
                 ->getForm();
     }
 

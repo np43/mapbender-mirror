@@ -1,19 +1,19 @@
 <?php
+
 namespace Mapbender\WmcBundle\Form\Type;
 
-use Mapbender\CoreBundle\Form\Type\StateType;
-use Mapbender\WmsBundle\Form\Type\LegendUrlType;
-use Mapbender\WmsBundle\Form\Type\OnlineResourceType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 
-//use Symfony\Component\Form\FormBuilder;
-
+/**
+ * Class WmcDeleteType
+ * @package Mapbender\WmcBundle\Form\Type
+ */
 class WmcDeleteType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -21,11 +21,11 @@ class WmcDeleteType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('id', 'hidden');
+        $builder->add('id', HiddenType::class);
     }
-
 }

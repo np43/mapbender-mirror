@@ -4,7 +4,6 @@ namespace Mapbender\CoreBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-
 use Mapbender\CoreBundle\Validator\Constraints\HtmlConstraint;
 use Mapbender\CoreBundle\Validator\Constraints\TwigConstraint;
 
@@ -37,7 +36,7 @@ class HtmlFormType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -50,7 +49,7 @@ class HtmlFormType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -58,12 +57,11 @@ class HtmlFormType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
      */
     public function getParent()
     {
         return 'textarea';
     }
-
 }
 

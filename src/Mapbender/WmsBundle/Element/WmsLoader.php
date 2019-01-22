@@ -8,19 +8,17 @@ use Mapbender\WmsBundle\Component\Wms\Importer;
 use Mapbender\WmsBundle\Component\WmsSourceEntityHandler;
 use Mapbender\WmsBundle\Entity\WmsOrigin;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * WmsLoader
- *
- * @author Karim Malhas
- * @author Paul Schmidt
+ * Class WmsLoader
+ * @package Mapbender\WmsBundle\Element
  */
 class WmsLoader extends Element
 {
-
     /**
-     * @inheritdoc
+     * @return string|string[]
      */
     public static function getClassTitle()
     {
@@ -28,7 +26,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getClassDescription()
     {
@@ -36,7 +34,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public static function getClassTags()
     {
@@ -44,7 +42,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public static function getDefaultConfiguration()
     {
@@ -60,7 +58,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getWidgetName()
     {
@@ -68,7 +66,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public function getConfiguration()
     {
@@ -95,7 +93,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array|\string[][]
      */
     public function getAssets()
     {
@@ -117,7 +115,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getType()
     {
@@ -125,7 +123,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getFormTemplate()
     {
@@ -133,7 +131,7 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function render()
     {
@@ -146,7 +144,9 @@ class WmsLoader extends Element
     }
 
     /**
-     * @inheritdoc
+     * @param string $action
+     * @return JsonResponse|\Symfony\Component\HttpFoundation\Response
+     * @throws \Mapbender\CoreBundle\Component\Exception\XmlParseException
      */
     public function httpAction($action)
     {
@@ -158,6 +158,10 @@ class WmsLoader extends Element
         }
     }
 
+    /**
+     * @return JsonResponse
+     * @throws \Mapbender\CoreBundle\Component\Exception\XmlParseException
+     */
     protected function loadWms()
     {
         $request = $this->container->get('request_stack')->getCurrentRequest();
@@ -178,7 +182,12 @@ class WmsLoader extends Element
         return new JsonResponse($layerConfigurations);
     }
 
-    protected function getWmsSource($request)
+    /**
+     * @param $request
+     * @return \Mapbender\WmsBundle\Entity\WmsSource
+     * @throws \Mapbender\CoreBundle\Component\Exception\XmlParseException
+     */
+    protected function getWmsSource(Request $request)
     {
         $requestUrl = $request->get("url");
         $requestUserName = $request->get("username");
@@ -193,6 +202,10 @@ class WmsLoader extends Element
         return $importerResponse->getWmsSourceEntity();
     }
 
+    /**
+     * @param $layerConfiguration
+     * @return array
+     */
     protected function splitLayers($layerConfiguration)
     {
         $children = $layerConfiguration['configuration']['children'][0]['children'];

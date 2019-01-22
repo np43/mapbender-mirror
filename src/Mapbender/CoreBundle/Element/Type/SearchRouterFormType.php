@@ -6,13 +6,13 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- *
+ * Class SearchRouterFormType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class SearchRouterFormType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +20,7 @@ class SearchRouterFormType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -28,13 +28,18 @@ class SearchRouterFormType extends AbstractType
             'fields' => array()));
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
     private function escapeName($name)
     {
         return str_replace('"', '', $name);
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {

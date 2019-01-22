@@ -3,22 +3,36 @@
 namespace Mapbender\CoreBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormInterface;
 
+/**
+ * Class ExtentType
+ * @package Mapbender\CoreBundle\Form\Type
+ */
 class ExtentType extends AbstractType
 {
+    /**
+     * @return string
+     */
     public function getName()
     {
         return 'extent';
     }
 
+    /**
+     * @return string|\Symfony\Component\Form\FormTypeInterface|null
+     */
     public function getParent()
     {
         return 'collection';
     }
 
+    /**
+     * @param FormView $view
+     * @param FormInterface $form
+     * @param array $options
+     */
     public function finishView(FormView $view, FormInterface $form, array $options)
     {
         $view->children[0]->vars['label'] = 'min x';
@@ -31,4 +45,3 @@ class ExtentType extends AbstractType
         $view->children[3]->vars['attr'] = array('placeholder' => 'max y');
     }
 }
-

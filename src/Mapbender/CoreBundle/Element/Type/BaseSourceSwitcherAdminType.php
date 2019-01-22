@@ -4,15 +4,17 @@ namespace Mapbender\CoreBundle\Element\Type;
 
 use Mapbender\CoreBundle\Component\ExtendedCollection;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * BaseSourceSwitcher FormType
+ * Class BaseSourceSwitcherAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class BaseSourceSwitcherAdminType extends AbstractType implements ExtendedCollection
 {
-
     public $hasSubForm = true;
 
     public function isSubForm()
@@ -21,7 +23,7 @@ class BaseSourceSwitcherAdminType extends AbstractType implements ExtendedCollec
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -29,7 +31,7 @@ class BaseSourceSwitcherAdminType extends AbstractType implements ExtendedCollec
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -40,7 +42,8 @@ class BaseSourceSwitcherAdminType extends AbstractType implements ExtendedCollec
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -69,16 +72,16 @@ class BaseSourceSwitcherAdminType extends AbstractType implements ExtendedCollec
             }
         }
         $builder
-            ->add('title', 'text', array('required' => true))
-            ->add('tooltip', 'text', array('required' => false))
-            ->add('target', 'target_element',
+            ->add('title', TextType::class, array('required' => true))
+            ->add('tooltip', TextType::class, array('required' => false))
+            ->add('target', TargetElementType::class,
                   array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $application,
                 'property_path' => '[target]',
                 'required' => false));
         if (count($instances) > 0) {
-            $builder->add('instancesets', "collection", array(
+            $builder->add('instancesets', CollectionType::class, array(
                 'property_path' => '[instancesets]',
                 'type' => new InstanceSetAdminType(),
                 'allow_add' => true,

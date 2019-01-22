@@ -5,17 +5,15 @@ namespace Mapbender\WmsBundle\Element;
 use Mapbender\CoreBundle\Component\Element;
 use Mapbender\CoreBundle\Utils\ArrayUtil;
 use Mapbender\WmsBundle\Component\DimensionInst;
-use Mapbender\WmsBundle\Entity\WmsInstance;
 
 /**
- * Dimensions handler
- * @author Paul Schmidt
+ * Class DimensionsHandler
+ * @package Mapbender\WmsBundle\Element
  */
 class DimensionsHandler extends Element
 {
-
     /**
-     * @inheritdoc
+     * @return string|string[]
      */
     public static function getClassTitle()
     {
@@ -23,7 +21,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getClassDescription()
     {
@@ -31,7 +29,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public static function getClassTags()
     {
@@ -39,7 +37,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public static function getDefaultConfiguration()
     {
@@ -52,7 +50,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getWidgetName()
     {
@@ -60,7 +58,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array|\string[][]
      */
     public function getAssets()
     {
@@ -80,7 +78,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getType()
     {
@@ -88,13 +86,17 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public static function getFormTemplate()
     {
         return 'MapbenderWmsBundle:ElementAdmin:dimensionshandler.html.twig';
     }
 
+    /**
+     * @param string $suffix
+     * @return string
+     */
     public function getFrontendTemplatePath($suffix = '.html.twig')
     {
 
@@ -106,7 +108,7 @@ class DimensionsHandler extends Element
     }
 
     /**
-     * @inheritdoc
+     * @return array
      */
     public function getConfiguration()
     {
@@ -134,10 +136,6 @@ class DimensionsHandler extends Element
         $instances = array();
         foreach ($configuration['dimensionsets'] as $key => $value) {
             foreach (ArrayUtil::getDefault($value, 'group', array()) as $group) {
-                if (is_object($group)) {
-//                    die(var_export($configuration, true));
-//                    die(var_export(array($value, $group->getConfiguration()), true));
-                }
                 $item = explode("-", $group);
                 $instances[$item[0]] = $value['dimension'];
             }

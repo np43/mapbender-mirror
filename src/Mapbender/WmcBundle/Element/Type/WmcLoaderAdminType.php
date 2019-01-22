@@ -1,20 +1,22 @@
 <?php
 namespace Mapbender\WmcBundle\Element\Type;
 
+use Mapbender\CoreBundle\Element\Type\TargetElementType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * Description of WmcEditorAdminType
- *
- * @author Paul Schmidt
+ * Class WmcLoaderAdminType
+ * @package Mapbender\WmcBundle\Element\Type
  */
 class WmcLoaderAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -22,7 +24,7 @@ class WmcLoaderAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -32,25 +34,26 @@ class WmcLoaderAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('target', 'target_element',
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('target', TargetElementType::class,
                 array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('keepSources', 'choice',
+            ->add('keepSources', ChoiceType::class,
                 array(
                 'required' => false,
                 'choices' => array(
                     "no" => " no ",
                     "basesources" => "BaseSources",
                     "allsources" => "AllSources")))
-            ->add('components', 'choice',
+            ->add('components', ChoiceType::class,
                 array(
                 'multiple' => true,
                 'required' => true,
@@ -60,8 +63,7 @@ class WmcLoaderAdminType extends AbstractType
                     "wmclistloader" => "From List Loader",
                     "wmcxmlloader" => "Wmc Xml Loader",
                     "wmcurlloader" => "Wmc From Url Loader")))
-            ->add('keepExtent', 'checkbox', array(
+            ->add('keepExtent', CheckboxType::class, array(
                 'required' => false));
     }
-
 }

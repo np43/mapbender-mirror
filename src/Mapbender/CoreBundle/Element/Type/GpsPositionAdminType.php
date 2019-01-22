@@ -3,6 +3,8 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -12,9 +14,8 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  */
 class GpsPositionAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -22,7 +23,7 @@ class GpsPositionAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -33,17 +34,18 @@ class GpsPositionAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('tooltip', 'text', array('required' => false))
-            ->add('label', 'checkbox', array('required' => false))
-            ->add('autoStart', 'checkbox', array('required' => false))
+            ->add('tooltip', TextType::class, array('required' => false))
+            ->add('label', CheckboxType::class, array('required' => false))
+            ->add('autoStart', CheckboxType::class, array('required' => false))
             ->add(
                 'target',
-                'target_element',
+                TargetElementType::class,
                 array(
                     'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                     'application' => $options['application'],
@@ -51,23 +53,23 @@ class GpsPositionAdminType extends AbstractType
                     'required' => false
                 )
             )
-            ->add('icon', new IconClassType(), array('required' => false))
-            ->add('action', 'text', array('required' => false))
-            ->add('refreshinterval', 'text', array('required' => false))
-            ->add('average', 'text', array(
+            ->add('icon', IconClassType::class, array('required' => false))
+            ->add('action', TextType::class, array('required' => false))
+            ->add('refreshinterval', TextType::class, array('required' => false))
+            ->add('average', TextType::class, array(
                 'required' => false,
                 'property_path' => '[average]'
                 ))
-            ->add('follow', 'checkbox', array(
+            ->add('follow', CheckboxType::class, array(
                 'required' => false,
                 'property_path' => '[follow]'))
-            ->add('centerOnFirstPosition', 'checkbox', array(
+            ->add('centerOnFirstPosition', CheckboxType::class, array(
                 'required' => false,
                 'property_path' => '[centerOnFirstPosition]'))
-            ->add('zoomToAccuracy', 'checkbox', array(
+            ->add('zoomToAccuracy', CheckboxType::class, array(
                 'required' => false,
                 'property_path' => '[zoomToAccuracy]'))
-            ->add('zoomToAccuracyOnFirstPosition', 'checkbox', array(
+            ->add('zoomToAccuracyOnFirstPosition', CheckboxType::class, array(
                 'required' => false,
                 'property_path' => '[zoomToAccuracyOnFirstPosition]'));
     }

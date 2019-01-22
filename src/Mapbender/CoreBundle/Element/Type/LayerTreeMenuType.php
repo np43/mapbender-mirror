@@ -1,13 +1,13 @@
 <?php
-
-
 namespace Mapbender\CoreBundle\Element\Type;
 
-
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * Class LayerTreeMenuType
+ * @package Mapbender\CoreBundle\Element\Type
+ */
 class LayerTreeMenuType extends AbstractType
 {
     protected $exposedChoices = array();
@@ -30,9 +30,8 @@ class LayerTreeMenuType extends AbstractType
         }
     }
 
-
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -42,9 +41,8 @@ class LayerTreeMenuType extends AbstractType
         ));
     }
 
-
     /**
-     * {@inheritdoc}
+     * @return string
      */
     public function getName()
     {

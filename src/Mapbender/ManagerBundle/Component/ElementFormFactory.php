@@ -4,12 +4,15 @@
 namespace Mapbender\ManagerBundle\Component;
 
 
+use FOM\UserBundle\Form\Type\ACLType;
 use Mapbender\CoreBundle\Component\ExtendedCollection;
 use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Entity\Element;
 use Mapbender\ManagerBundle\Form\Type\YAMLConfigurationType;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormTypeInterface;
 
@@ -55,9 +58,9 @@ class ElementFormFactory
         // Create base form shared by all elements
         $formType = $this->formFactory->createBuilder('form', $element, array());
         $formType
-            ->add('title', 'text')
-            ->add('class', 'hidden')
-            ->add('region', 'hidden')
+            ->add('title', TextType::class)
+            ->add('class', HiddenType::class)
+            ->add('region', HiddenType::class)
         ;
         $configurationType = $this->getConfigurationFormType($element);
 
@@ -161,7 +164,7 @@ class ElementFormFactory
     public function getSecurityForm(Element $element)
     {
         $formType = $this->formFactory->createBuilder('form', $element, array());
-        $formType->add('acl', 'acl', array(
+        $formType->add('acl', ACLType::class, array(
             'mapped' => false,
             'data' => $element,
             'create_standard_permissions' => false,
@@ -169,6 +172,7 @@ class ElementFormFactory
                 1 => 'View',
             ),
         ));
+
         return array(
             'form' => $formType->getForm(),
         );

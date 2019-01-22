@@ -1,7 +1,9 @@
 <?php
 namespace Mapbender\CoreBundle\Element\Type;
 
+use Mapbender\CoreBundle\Form\Type\HtmlFormType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -12,7 +14,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 class HTMLElementAdminType extends AbstractType
 {
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +22,7 @@ class HTMLElementAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,15 +32,16 @@ class HTMLElementAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $builder
-            ->add('content', 'html', [
+            ->add('content', HtmlFormType::class, [
                 'required' => false,
             ])
-            ->add('classes', 'text', [
+            ->add('classes', TextType::class, [
                 'required' => false,
             ]);
     }

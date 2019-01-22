@@ -3,19 +3,27 @@
 namespace Mapbender\CoreBundle\Element\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
+/**
+ * Class LayerThemeType
+ * @package Mapbender\CoreBundle\Element\Type
+ */
 class LayerThemeType extends AbstractType
 {
-
+    /**
+     * @return string
+     */
     public function getName()
     {
         return 'theme';
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,16 +38,16 @@ class LayerThemeType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('id', 'hidden', array('required' => true, 'property_path' => '[id]'))
-            ->add('title', 'hidden', array('required' => false, 'property_path' => '[title]'))
-            ->add('useTheme', 'checkbox', array('required' => false, 'property_path' => '[useTheme]'))
-            ->add('opened', 'checkbox', array('required' => false, 'property_path' => '[opened]'))
-            ->add('sourceVisibility', 'checkbox', array('required' => false, 'property_path' => '[sourceVisibility]'))
-            ->add('allSelected', 'checkbox', array('required' => false, 'property_path' => '[allSelected]'));
+        $builder->add('id', HiddenType::class, array('required' => true, 'property_path' => '[id]'))
+            ->add('title', HiddenType::class, array('required' => false, 'property_path' => '[title]'))
+            ->add('useTheme', CheckboxType::class, array('required' => false, 'property_path' => '[useTheme]'))
+            ->add('opened', CheckboxType::class, array('required' => false, 'property_path' => '[opened]'))
+            ->add('sourceVisibility', CheckboxType::class, array('required' => false, 'property_path' => '[sourceVisibility]'))
+            ->add('allSelected', CheckboxType::class, array('required' => false, 'property_path' => '[allSelected]'));
     }
-
 }

@@ -2,15 +2,17 @@
 namespace Mapbender\WmcBundle\Form\Type;
 
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 
-//use Symfony\Component\Form\FormBuilder;
-
+/**
+ * Class WmcStateType
+ * @package Mapbender\WmcBundle\Form\Type
+ */
 class WmcStateType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -18,14 +20,14 @@ class WmcStateType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add('state', 'hidden',
+        $builder->add('state', HiddenType::class,
             array(
             'required' => false,
             'data_class' => 'Mapbender\CoreBundle\Entity\State'));
     }
-
 }

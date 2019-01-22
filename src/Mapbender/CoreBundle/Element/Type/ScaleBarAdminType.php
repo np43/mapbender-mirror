@@ -1,18 +1,21 @@
 <?php
 namespace Mapbender\CoreBundle\Element\Type;
 
+use Mapbender\CoreBundle\Entity\Layerset;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
 /**
- * 
+ * Class ScaleBarAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class ScaleBarAdminType extends AbstractType
 {
-
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -20,7 +23,7 @@ class ScaleBarAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -30,25 +33,28 @@ class ScaleBarAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $app = $options['application'];
         $layersets = array();
+
+        /** @var Layerset $layerset */
         foreach ($app->getLayersets() as $layerset) {
             $layersets[$layerset->getId()] = $layerset->getTitle();
         }
 
-        $builder->add('tooltip', 'text', array('required' => false))
-            ->add('target', 'target_element',
+        $builder->add('tooltip', TextType::class, array('required' => false))
+            ->add('target', TargetElementType::class,
                 array(
                 'element_class' => 'Mapbender\\CoreBundle\\Element\\Map',
                 'application' => $options['application'],
                 'property_path' => '[target]',
                 'required' => false))
-            ->add('maxWidth', 'text', array('required' => true))
-            ->add('anchor', "choice",
+            ->add('maxWidth', TextType::class, array('required' => true))
+            ->add('anchor', ChoiceType::class,
                 array(
                 'required' => true,
                 "choices" => array(
@@ -56,7 +62,7 @@ class ScaleBarAdminType extends AbstractType
                     'left-bottom' => 'left-bottom',
                     'right-top' => 'right-top',
                     'right-bottom' => 'right-bottom')))
-            ->add('units', 'choice',
+            ->add('units', ChoiceType::class,
                 array(
                 'required' => true,
                 'multiple' => true,
@@ -64,5 +70,4 @@ class ScaleBarAdminType extends AbstractType
                     'km' => 'kilometer',
                     'ml' => 'mile')));
     }
-
 }

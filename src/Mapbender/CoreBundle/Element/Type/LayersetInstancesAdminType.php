@@ -12,19 +12,16 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Mapbender\CoreBundle\Form\DataTransformer\ObjectIdTransformer;
 
 /**
- * 
+ * Class LayersetInstancesAdminType
+ * @package Mapbender\CoreBundle\Element\Type
  */
 class LayersetInstancesAdminType extends AbstractType
 {
-
-    /**
-     *
-     * @var type 
-     */
     protected $container;
 
     /**
-     * @inheritdoc
+     * LayersetInstancesAdminType constructor.
+     * @param ContainerInterface $container
      */
     public function __construct(ContainerInterface $container)
     {
@@ -32,7 +29,7 @@ class LayersetInstancesAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return ContainerInterface
      */
     public function getContainer()
     {
@@ -40,7 +37,7 @@ class LayersetInstancesAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @return string
      */
     public function getName()
     {
@@ -56,7 +53,7 @@ class LayersetInstancesAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param OptionsResolver $resolver
      */
     public function configureOptions(OptionsResolver $resolver)
     {
@@ -76,7 +73,8 @@ class LayersetInstancesAdminType extends AbstractType
     }
 
     /**
-     * @inheritdoc
+     * @param FormBuilderInterface $builder
+     * @param array $options
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
@@ -85,6 +83,11 @@ class LayersetInstancesAdminType extends AbstractType
         $builder->addModelTransformer($transformer);
     }
 
+    /**
+     * @param FormView $view
+     * @param FormInterface $form
+     * @param array $options
+     */
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
         $choices = $view->vars['choices'];
@@ -99,5 +102,4 @@ class LayersetInstancesAdminType extends AbstractType
             'choices' => $choices
         ));
     }
-
 }
