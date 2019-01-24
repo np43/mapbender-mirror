@@ -11,6 +11,10 @@ use Mapbender\WmsBundle\Component\OnlineResource;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+/**
+ * Class WmcEditor
+ * @package Mapbender\WmcBundle\Element
+ */
 class WmcEditor extends WmcBase
 {
 
@@ -261,66 +265,71 @@ class WmcEditor extends WmcBase
         $wmchandler = $this->wmcHandlerFactory();
         $request = $this->container->get('request_stack')->getCurrentRequest();
         $wmc = Wmc::create();
-        $form = $this->container->get("form.factory")->create(new WmcType(), $wmc);
-        if ($request->getMethod() === 'POST') {
-            $form->bind($request);
-            if ($form->isValid()) { //TODO: Is file an image (jpg/png/gif?)
-                if ($wmc->getId() !== null) {
-                    $wmc = $this->container->get('doctrine')
-                        ->getRepository('Mapbender\WmcBundle\Entity\Wmc')
-                        ->find($wmc->getId());
-                    $form = $this->container->get("form.factory")->create(new WmcType(), $wmc);
-                    $form->bind($request);
-                    if (!$form->isValid()) {
-                        return new Response(json_encode(array(
-                                "error" => $this->trans("mb.wmc.error.wmcnotfound",
-                                    array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmc->getId() . ')')))),
-                            200, array('Content-Type' => 'application/json'));
-                    }
+        $form = $this->container->get("form.factory")
+            ->create(new WmcType(), $wmc)
+            ->handleRequest($request)
+        ;
+
+        if ($form->isValid() && $form->isSubmitted()) { //TODO: Is file an image (jpg/png/gif?)
+            if ($wmc->getId() !== null) {
+                $wmc = $this->container->get('doctrine')
+                    ->getRepository('Mapbender\WmcBundle\Entity\Wmc')
+                    ->find($wmc->getId());
+                $form = $this->container->get("form.factory")
+                    ->create(new WmcType(), $wmc)
+                    ->handleRequest($request)
+                ;
+
+                if ($form->isSubmitted() && !$form->isValid()) {
+                    return new Response(json_encode(array(
+                        "error" => $this->trans("mb.wmc.error.wmcnotfound",
+                            array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmc->getId() . ')')))),
+                        200, array('Content-Type' => 'application/json'));
                 }
-                $wmc->setState($wmchandler->unSignUrls($wmc->getState()));
-                $em = $this->container->get('doctrine')->getManager();
-                $em->getConnection()->beginTransaction();
+            }
+            $wmc->setState($wmchandler->unSignUrls($wmc->getState()));
+            $em = $this->container->get('doctrine')->getManager();
+            $em->getConnection()->beginTransaction();
+            $em->persist($wmc);
+            $em->flush();
+            if ($wmc->getScreenshotPath() === null) {
+                if ($wmc->getScreenshot() !== null) {
+                    $upload_directory = $wmchandler->getWmcDir();
+                    if ($upload_directory !== null) {
+                        $filename = sprintf('screenshot-%d.%s', $wmc->getId(),
+                            $wmc->getScreenshot()->guessExtension());
+                        $wmc->getScreenshot()->move($upload_directory, $filename);
+                        $wmc->setScreenshotPath($filename);
+                        $format = $wmc->getScreenshot()->getClientMimeType();
+                        $screenshotHref = $wmchandler->getWmcUrl($filename);
+                        if ($screenshotHref) {
+                            $legendOnlineResource = new OnlineResource($format, $screenshotHref);
+                            $logoUrl = new LegendUrl($legendOnlineResource);
+                            $wmc->setLogourl($logoUrl);
+                        } else {
+                            $wmc->setLogourl(null);
+                        }
+                        $state = $wmc->getState();
+                        $state->setServerurl($wmchandler->getBaseUrl());
+                        $state->setSlug($this->getEntity()->getApplication()->getSlug());
+                    }
+                } else {
+                    $wmc->setScreenshotPath(null);
+                }
                 $em->persist($wmc);
                 $em->flush();
-                if ($wmc->getScreenshotPath() === null) {
-                    if ($wmc->getScreenshot() !== null) {
-                        $upload_directory = $wmchandler->getWmcDir();
-                        if ($upload_directory !== null) {
-                            $filename = sprintf('screenshot-%d.%s', $wmc->getId(),
-                                $wmc->getScreenshot()->guessExtension());
-                            $wmc->getScreenshot()->move($upload_directory, $filename);
-                            $wmc->setScreenshotPath($filename);
-                            $format = $wmc->getScreenshot()->getClientMimeType();
-                            $screenshotHref = $wmchandler->getWmcUrl($filename);
-                            if ($screenshotHref) {
-                                $legendOnlineResource = new OnlineResource($format, $screenshotHref);
-                                $logoUrl = new LegendUrl($legendOnlineResource);
-                                $wmc->setLogourl($logoUrl);
-                            } else {
-                                $wmc->setLogourl(null);
-                            }
-                            $state = $wmc->getState();
-                            $state->setServerurl($wmchandler->getBaseUrl());
-                            $state->setSlug($this->getEntity()->getApplication()->getSlug());
-                        }
-                    } else {
-                        $wmc->setScreenshotPath(null);
-                    }
-                    $em->persist($wmc);
-                    $em->flush();
-                }
-                $em->getConnection()->commit();
-                return new Response(json_encode(array(
-                        "success" => $this->trans("mb.wmc.error.wmcsaved",
-                            array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmc->getId() . ')')))),
-                    200, array('Content-Type' => 'application/json'));
-            } else {
-                return new Response(json_encode(array(
-                        "error" => $this->trans("mb.wmc.error.wmccannotbesaved", array('%wmcid%' => $wmc->getId())))),
-                    200, array('Content-Type' => 'application/json'));
             }
+            $em->getConnection()->commit();
+
+            return new Response(json_encode(array(
+                "success" => $this->trans("mb.wmc.error.wmcsaved",
+                    array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmc->getId() . ')')))),
+                200, array('Content-Type' => 'application/json'));
         }
+
+        return new Response(json_encode(array(
+            "error" => $this->trans("mb.wmc.error.wmccannotbesaved", array('%wmcid%' => $wmc->getId())))),
+            200, array('Content-Type' => 'application/json'));
     }
 
     /**
@@ -331,6 +340,7 @@ class WmcEditor extends WmcBase
     protected function confirmDeleteWmc()
     {
         $wmcid = $this->container->get('request_stack')->getCurrentRequest()->get("_id", null);
+
         if ($wmcid) {
             $wmchandler = $this->wmcHandlerFactory();
             $wmc = $wmchandler->getWmc($wmcid, false);
@@ -338,59 +348,59 @@ class WmcEditor extends WmcBase
             $html = $this->container->get('templating')
                 ->render('MapbenderWmcBundle:Wmc:deletewmc.html.twig',
                 array(
-                'application' => $this->getEntity()->getApplication(),
-                'form' => $form->createView(),
-                'id' => $this->getEntity()->getId(),
-                'wmc' => $wmc));
+                    'application' => $this->getEntity()->getApplication(),
+                    'form' => $form->createView(),
+                    'id' => $this->getEntity()->getId(),
+                    'wmc' => $wmc
+                ));
+
             return new Response($html, 200, array('Content-Type' => 'text/html'));
-        } else {
-            return new Response($this->trans("mb.wmc.error.wmcnotfound", array('%wmcid%' => '')), 200,
-                array('Content-Type' => 'text/html'));
         }
+
+        return new Response($this->trans("mb.wmc.error.wmcnotfound", array('%wmcid%' => '')), 200,
+            array('Content-Type' => 'text/html'));
     }
 
     /**
      * Returns a json encoded wmc or error if wmc is not found.
      *
-     * @param integer|string $id wmc id
      * @return \Symfony\Component\HttpFoundation\Response a json encoded result.
      */
     protected function deleteWmc()
     {
         $wmc = Wmc::create();
-        $form = $this->container->get("form.factory")->create(new WmcDeleteType(), $wmc);
-        if ($this->container->get('request_stack')->getCurrentRequest()->getMethod() === 'POST') {
-            $form->bind($this->container->get('request_stack')->getCurrentRequest());
-            if ($form->isValid()) {
-                $wmchandler = $this->wmcHandlerFactory();
-                $wmcid = $wmc->getId();
-                $wmc = $wmchandler->getWmc($wmcid, false);
-                $em = $this->container->get('doctrine')->getManager();
-                $em->getConnection()->beginTransaction();
-                if ($wmc->getScreenshotPath() !== null) {
-                    $filepath = $wmchandler->getWmcDir() . '/' . $wmc->getScreenshotPath();
-                    if ($filepath !== null) {
-                        if (file_exists($filepath)) {
-                            unlink($filepath);
-                        }
+        $form = $this->container->get("form.factory")
+            ->create(new WmcDeleteType(), $wmc)
+            ->handleRequest($this->container->get('request_stack')->getCurrentRequest());
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $wmchandler = $this->wmcHandlerFactory();
+            $wmcid = $wmc->getId();
+            $wmc = $wmchandler->getWmc($wmcid, false);
+            $em = $this->container->get('doctrine')->getManager();
+            $em->getConnection()->beginTransaction();
+
+            if ($wmc->getScreenshotPath() !== null) {
+                $filepath = $wmchandler->getWmcDir() . '/' . $wmc->getScreenshotPath();
+                if ($filepath !== null) {
+                    if (file_exists($filepath)) {
+                        unlink($filepath);
                     }
                 }
-                $em->remove($wmc);
-                $em->flush();
-                $em->getConnection()->commit();
-                return new Response(json_encode(array(
-                        "success" => $this->trans("mb.wmc.error.wmcremoved",
-                            array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmcid . ")")))), 200,
-                    array('Content-Type' => 'application/json'));
-            } else {
-                return new Response(json_encode(array(
-                        "error" => $this->trans("mb.wmc.error.wmcnotfound", array('%wmcid%' => '')))), 200,
-                    array('Content-Type' => 'application/json'));
             }
+
+            $em->remove($wmc);
+            $em->flush();
+            $em->getConnection()->commit();
+
+            return new Response(json_encode(array(
+                "success" => $this->trans("mb.wmc.error.wmcremoved",
+                    array('%wmcid%' => '"' . $wmc->getState()->getTitle() . '" (' . $wmcid . ")")))), 200,
+                array('Content-Type' => 'application/json'));
         }
+
         return new Response(json_encode(array(
                 "error" => $this->trans("mb.wmc.error.wmccannotberemoved"))), 200,
             array('Content-Type' => 'application/json'));
     }
-
 }

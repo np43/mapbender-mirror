@@ -269,9 +269,12 @@ class WmcLoader extends WmcBase
         if (in_array("wmcxmlloader", $config['components'])) {
             $request = $this->container->get('request_stack')->getCurrentRequest();
             $wmc = Wmc::create();
-            $form = $this->container->get("form.factory")->create(new WmcLoadType(), $wmc);
-            $form->bind($request);
-            if ($form->isValid()) {
+
+            $form = $this->container->get("form.factory")
+                ->create(new WmcLoadType(), $wmc)
+                ->handleRequest($request);
+
+            if ($form->isValid() && $form->isSubmitted()) {
                 if ($wmc->getXml() !== null) {
                     $file = $wmc->getXml();
                     $path = $file->getPathname();
