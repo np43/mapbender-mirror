@@ -9,7 +9,6 @@ use Mapbender\CoreBundle\Component\Exception\ElementErrorException;
 use Mapbender\CoreBundle\Entity;
 use Mapbender\CoreBundle\Component;
 use FOM\UserBundle\Component\AclManager;
-use Mapbender\CoreBundle\Component\SecurityContext;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
@@ -121,7 +120,7 @@ class ApplicationService
      * @param string $permission
      * @return bool
      */
-    protected function isElementGranted(Entity\Element $element, $permission = SecurityContext::PERMISSION_VIEW)
+    protected function isElementGranted(Entity\Element $element, $permission = "VIEW")
     {
         if ($this->aclManager->hasObjectAclEntries($element)) {
             $isGranted = $this->authorizationChecker->isGranted($permission, $element);
