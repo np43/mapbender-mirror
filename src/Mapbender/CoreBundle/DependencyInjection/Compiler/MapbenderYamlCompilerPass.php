@@ -87,23 +87,18 @@ class MapbenderYamlCompilerPass implements CompilerPassInterface
      * Load and merge d YAML file parameters data
      *
      * @param string $filePath Absolute file path
-     * @return FileResource
      */
     public function loadAndMergeYamlParameters($filePath)
     {
-        $container    = $this->container;
-        $fileResource = new FileResource($filePath);
-        $yml          = Yaml::parse($filePath);
+        $yml = Yaml::parse(file_get_contents($filePath));
 
-        $container->addResource($fileResource);
+        $this->container->addResource(new FileResource($filePath));
 
         if (array_key_exists('parameters', $yml) && is_array($yml['parameters'])) {
             foreach ($yml['parameters'] as $key => $data) {
                 $this->mergeParameterData($key, $data);
             }
         }
-
-        return $fileResource;
     }
 
 
