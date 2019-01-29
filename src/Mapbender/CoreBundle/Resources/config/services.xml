@@ -80,7 +80,7 @@
             <call method="setCompass">
                 <argument>%assetic.filter.sass.compass%</argument>
             </call>
-			
+
             <!-- default option for SASSC -->
             <call method="setCacheLocation">
                 <argument>false</argument>
@@ -143,14 +143,14 @@
             <argument type="service" id="mapbender.source.instancetunnel.service" />
             <argument>%owsproxy.baseroute%</argument>
         </service>
-        <service id="mapbender.element_factory.service" class="%mapbender.element_factory.service.class%">
-            <argument key="translator" type="service" id="translator" />
+        <service id="mapbender.element_factory.service" class="%mapbender.element_factory.service.class%" public="true">
+            <argument type="service" id="translator" />
             <argument type="service" id="service_container" />
         </service>
-        <service id="mapbender.uploads_manager.service" class="%mapbender.uploads_manager.service.class%">
-            <argument key="fileSystem" type="service" id="filesystem" />
-            <argument key="absoluteWebPath">%kernel.root_dir%/../web</argument>
-            <argument key="relativePath">%mapbender.uploads_dir%</argument>
+        <service id="mapbender.uploads_manager.service" class="%mapbender.uploads_manager.service.class%" public="true">
+            <argument type="service" id="filesystem" />
+            <argument>%kernel.root_dir%/../web</argument>
+            <argument>%mapbender.uploads_dir%</argument>
         </service>
         <service id="mapbender.yaml_application_importer.service" class="%mapbender.yaml_application_importer.service.class%">
             <argument type="service" id="security.acl.provider" />
@@ -176,8 +176,8 @@
             <argument type="service" id="mapbender.element_factory.service" />
             <argument type="service" id="router" />
             <argument type="service" id="templating" />
-            <argument key="minifyCss">%kernel.debug%</argument>
-            <argument key="strict">%mapbender.strict.asset.bundle_scopes%</argument>
+            <argument>%kernel.debug%</argument>
+            <argument>%mapbender.strict.asset.bundle_scopes%</argument>
         </service>
     </services>
 </container>
