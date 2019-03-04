@@ -1017,12 +1017,13 @@ class PrintService
             $color = $this->getColor('#ff0000', 1, $image);
             $bgcolor = $this->getColor('#ffffff', 1, $image);
             $fontPath = $this->resourceDir.'/fonts/';
+            $fontSize = 14 * $resizeFactor;
             $font = $fontPath . 'OpenSans-Bold.ttf';
-            imagettftext($image, 14, 0, $p[0], $p[1]+1, $bgcolor, $font, $geometry['style']['label']);
-            imagettftext($image, 14, 0, $p[0], $p[1]-1, $bgcolor, $font, $geometry['style']['label']);
-            imagettftext($image, 14, 0, $p[0]-1, $p[1], $bgcolor, $font, $geometry['style']['label']);
-            imagettftext($image, 14, 0, $p[0]+1, $p[1], $bgcolor, $font, $geometry['style']['label']);
-            imagettftext($image, 14, 0, $p[0], $p[1], $color, $font, $style['label']);
+            imagettftext($image, $fontSize, 0, $p[0], $p[1]+1, $bgcolor, $font, $geometry['style']['label']);
+            imagettftext($image, $fontSize, 0, $p[0], $p[1]-1, $bgcolor, $font, $geometry['style']['label']);
+            imagettftext($image, $fontSize, 0, $p[0]-1, $p[1], $bgcolor, $font, $geometry['style']['label']);
+            imagettftext($image, $fontSize, 0, $p[0]+1, $p[1], $bgcolor, $font, $geometry['style']['label']);
+            imagettftext($image, $fontSize, 0, $p[0], $p[1], $color, $font, $style['label']);
             //return;
         }
 
