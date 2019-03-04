@@ -838,8 +838,18 @@ class PrintService
         }
     }
 
+    private function getResizeFactor()
+    {
+        if ($this->data['quality'] != 72) {
+            return $this->data['quality'] / 72;
+        } else {
+            return 1;
+        }
+    }
+    
     private function drawPolygon($geometry, $image)
     {
+        $resizeFactor = $this->getResizeFactor();
         $style = $this->getStyle($geometry);
         foreach($geometry['coordinates'] as $ring) {
             if(count($ring) < 3) {
@@ -871,7 +881,7 @@ class PrintService
                     $style['strokeColor'],
                     $style['strokeOpacity'],
                     $image);
-                imagesetthickness($image, $style['strokeWidth']);
+                imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
                 imagepolygon($image, $points, count($ring), $color);
             }
         }
@@ -879,6 +889,7 @@ class PrintService
 
     private function drawMultiPolygon($geometry, $image)
     {
+        $resizeFactor = $this->getResizeFactor();
         $style = $this->getStyle($geometry);
         foreach($geometry['coordinates'] as $element) {
             foreach($element as $ring) {
@@ -911,7 +922,7 @@ class PrintService
                         $style['strokeColor'],
                         $style['strokeOpacity'],
                         $image);
-                    imagesetthickness($image, $style['strokeWidth']);
+                    imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
                     imagepolygon($image, $points, count($ring), $color);
                 }
             }
@@ -920,6 +931,7 @@ class PrintService
 
     private function drawLineString($geometry, $image)
     {
+        $resizeFactor = $this->getResizeFactor();
         $style = $this->getStyle($geometry);
         $color = $this->getColor(
             $style['strokeColor'],
@@ -928,7 +940,7 @@ class PrintService
         if ($style['strokeWidth'] == 0) {
             return;
         }
-        imagesetthickness($image, $style['strokeWidth']);
+        imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
 
         for($i = 1; $i < count($geometry['coordinates']); $i++) {
 
@@ -954,6 +966,7 @@ class PrintService
 
     private function drawMultiLineString($geometry, $image)
     {
+        $resizeFactor = $this->getResizeFactor();
         $style = $this->getStyle($geometry);
         $color = $this->getColor(
             $style['strokeColor'],
@@ -962,35 +975,34 @@ class PrintService
         if ($style['strokeWidth'] == 0) {
             return;
         }
-        imagesetthickness($image, $style['strokeWidth']);
+        imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
 
-		foreach($geometry['coordinates'] as $coords) {
+        foreach($geometry['coordinates'] as $coords) {
+            for($i = 1; $i < count($coords); $i++) {
+                if($this->rotation == 0){
+                    $from = $this->realWorld2mapPos(
+                        $coords[$i - 1][0],
+                        $coords[$i - 1][1]);
+                    $to = $this->realWorld2mapPos(
+                        $coords[$i][0],
+                        $coords[$i][1]);
+                }else{
+                    $from = $this->realWorld2rotatedMapPos(
+                        $coords[$i - 1][0],
+                        $coords[$i - 1][1]);
+                    $to = $this->realWorld2rotatedMapPos(
+                        $coords[$i][0],
+                        $coords[$i][1]);
+                }
 
-			for($i = 1; $i < count($coords); $i++) {
-
-				if($this->rotation == 0){
-					$from = $this->realWorld2mapPos(
-						$coords[$i - 1][0],
-						$coords[$i - 1][1]);
-					$to = $this->realWorld2mapPos(
-						$coords[$i][0],
-						$coords[$i][1]);
-				}else{
-					$from = $this->realWorld2rotatedMapPos(
-						$coords[$i - 1][0],
-						$coords[$i - 1][1]);
-					$to = $this->realWorld2rotatedMapPos(
-						$coords[$i][0],
-						$coords[$i][1]);
-				}
-
-				imageline($image, $from[0], $from[1], $to[0], $to[1], $color);
-			}
-		}
+                imageline($image, $from[0], $from[1], $to[0], $to[1], $color);
+            }
+        }
     }
 
     private function drawPoint($geometry, $image)
     {
+        $resizeFactor = $this->getResizeFactor();
         $style = $this->getStyle($geometry);
         $c = $geometry['coordinates'];
 
@@ -1029,6 +1041,7 @@ class PrintService
                 $style['strokeColor'],
                 $style['strokeOpacity'],
                 $image);
+            imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
             imageellipse($image, $p[0], $p[1], 2*$radius, 2*$radius, $color);
         }
     }
