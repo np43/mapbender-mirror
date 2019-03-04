@@ -1027,14 +1027,14 @@ class PrintService
             //return;
         }
 
-        $radius = $style['pointRadius'];
+        $radius = round($style['pointRadius'] * $resizeFactor);
         // Filled circle
         if($style['fillOpacity'] > 0){
             $color = $this->getColor(
                 $style['fillColor'],
                 $style['fillOpacity'],
                 $image);
-            imagefilledellipse($image, $p[0], $p[1], 2*$radius, 2*$radius, $color);
+            imagefilledellipse($image, $p[0], $p[1], 2 * $radius, 2 * $radius, $color);
         }
         // Circle border
         if ($style['strokeWidth'] > 0) {
@@ -1042,8 +1042,7 @@ class PrintService
                 $style['strokeColor'],
                 $style['strokeOpacity'],
                 $image);
-            imagesetthickness($image, $style['strokeWidth'] * $resizeFactor);
-            imageellipse($image, $p[0], $p[1], 2*$radius, 2*$radius, $color);
+            $this->drawCircleOutline($image, $p[0], $p[1], $radius, $color, $style['strokeWidth'] * $resizeFactor);
         }
     }
 
@@ -1068,6 +1067,42 @@ class PrintService
             }
         }
         imagepng($image, $this->finalImageName);
+    }
+    
+    protected function drawCircleOutline($image, $centerX, $centerY, $radius, $color, $width)
+    {
+        // imageellipse does not support thickness or styling
+        // => draw the outline on a temp image by first drawing an outer filled circle,
+        //    then cut out the inside of the ring by rendering another, smaller circle
+        //    on top of it with a fully transparent color with blending disabled
+        
+        $offsetXy = intval($radius + $width + 1);
+        $sizeWh = 2 * $offsetXy;
+        
+        // create temporary image to draw the circle outline
+        $tmpImage = imagecreatetruecolor($sizeWh, $sizeWh);
+        $transparent = imagecolorallocatealpha($tmpImage, 255, 255, 255, 127);
+        imagesavealpha($tmpImage, true);
+        imagealphablending($tmpImage, false);
+        imagefilledrectangle($tmpImage, 0, 0, $sizeWh, $sizeWh, $transparent);
+        
+        // draw circle outline
+        $innerDiameter = intval(round(2 * ($radius - 0.5 * $width)));
+        $outerDiameter = intval(round(2 * ($radius + 0.5 * $width)));
+        imagefilledellipse($tmpImage, $offsetXy, $offsetXy, $outerDiameter, $outerDiameter, $color);
+        if ($innerDiameter > 0) {
+            // stamp out a fully transparent circle
+            imagefilledellipse($tmpImage, $offsetXy, $offsetXy, $innerDiameter, $innerDiameter, $transparent);
+        }
+        
+        // merge temporary image on original image
+        imagealphablending($image, true);
+        imagecopyresampled($image, $tmpImage,
+            $centerX - $offsetXy, $centerY - $offsetXy, 0,0,
+            $sizeWh, $sizeWh,
+            $sizeWh, $sizeWh);
+        
+        imagecolordeallocate($tmpImage, $transparent);
     }
 
     private function addLegend()
