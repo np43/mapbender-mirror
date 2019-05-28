@@ -13,6 +13,7 @@ class ManagerTemplate extends Template
 {
     protected static $css = array(
         '@MapbenderManagerBundle/Resources/public/sass/manager/applications.scss',
+        '/../vendor/twbs/bootstrap/dist/css/bootstrap.css'
     );
 
     protected static $js = array(
@@ -25,6 +26,7 @@ class ManagerTemplate extends Template
         '@FOMCoreBundle/Resources/public/js/components.js',
         '@FOMCoreBundle/Resources/public/js/widgets/collection.js',
         '@MapbenderCoreBundle/Resources/public/mapbender.trans.js',
+        '/../vendor/twbs/bootstrap/dist/js/bootstrap.js'
     );
 
     protected static $translations = array(
