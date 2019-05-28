@@ -10,15 +10,22 @@
 
 {% block manager_content %}
 
-  {% include "MapbenderManagerBundle:Application:actions.html.twig" %}
+
   {% if applications | length > 0 %}
+   <div class="row">
+      <div class="form-group col-md-5">
+            <input placeholder="{{"mb.manager.admin.filter.application"|trans}}" id="inputFilterApplications" type="text" class="input listFilterInput form-control">
 
-  <label for="inputFilterApplications" class="labelInput">{{"mb.manager.admin.filter.application"|trans}}</label><input id="inputFilterApplications" type="text" class="input listFilterInput">
+          {% include "MapbenderManagerBundle:Application:actions.html.twig" %}
+      </div>
+   </div>
 
-    <div class="row">
+
+    <div class="row d-flex  align-items-stretch ">
+
       {% for application in applications %}
-          <div class="d-flex mx-3 align-items-stretch ">
-            <div class="card shadow-lg p-3 mb-5 bg-white rounded" style="width: 18rem;">
+
+            <div class="card shadow-lg p-3 mx-3 mb-5 bg-white rounded" style="width: 18rem;">
               <ul class="list-group list-group-flush">
                   <li class="list-group-item ">{{ application.slug }}</li>
                   <li class="list-group-item">{% if application.screenshot is not null %}
@@ -52,7 +59,7 @@
                       </div></li>
                   <li class="list-group-item">{{ application.description }}</li>
               </ul>
-          </div>
+
           </div>
       {% endfor %}
     </div>
