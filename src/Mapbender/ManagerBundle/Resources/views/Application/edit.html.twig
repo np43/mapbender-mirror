@@ -25,14 +25,17 @@
   <a class="iconView iconBig right" target="_blank" href="{{ path('mapbender_core_application_application', {'slug': application.slug}) }}" title="{{ 'mb.manager.admin.application.view' | trans }}"></a>
     {{ form_start(form, {"attr": {"action": path('mapbender_manager_application_update', { 'slug': application.slug }), "novalidate": "novalidate"}}) }}
     <div id="applicationTabContainer" class="tabContainer applicationTabContainer">
-      <ul class="tabs">
-        <li id="tabBaseData" class="tab active">{{"mb.manager.admin.application.edit.base_data" | trans }}</li>
-        <li id="tabLayout" class="tab">{{"mb.manager.admin.application.layouts" | trans }}</li>
-        <li id="tabLayers" class="tab">{{"mb.manager.admin.application.layersets" | trans }}</li>
-        <li id="tabCustomCss" class="tab">{{"mb.manager.admin.application.custom_css" | trans }}</li>
-        <li id="tabSecurity" class="tab">{{"mb.manager.admin.application.security.title" | trans }}</li>
-      </ul>
-      <div id="containerBaseData" class="container active containerBaseData row no-gutters">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <a data-toggle="tab" id="tabBaseData" class="nav-item nav-link active" href="#containerBaseData">{{"mb.manager.admin.application.edit.base_data" | trans }}</a>
+                <a data-toggle="tab" id="tabLayout" class="nav-item nav-link" href="#containerLayout">{{"mb.manager.admin.application.layouts" | trans }}</a>
+                <a data-toggle="tab" id="tabLayers" class="nav-item nav-link" href="#containerLayers">{{"mb.manager.admin.application.layersets" | trans }}</a>
+                <a data-toggle="tab" id="tabCustomCss" class="nav-item nav-link" href="#containerCustomCss">{{"mb.manager.admin.application.custom_css" | trans }}</a>
+                <a data-toggle="tab"  id="tabSecurity" class="nav-item nav-link" href="#containerSecurity">{{"mb.manager.admin.application.security.title" | trans }}</a>
+            </div>
+        </nav>
+    <div class="tab-content">
+      <div id="containerBaseData" class="container active rounded-0  containerBaseData row no-gutters tab-pane fadein active">
 
         <div class="col-xs-8">{% include 'MapbenderManagerBundle:Application:form-basic.html.twig' %}</div>
         <div class="col-xs-4">
@@ -45,25 +48,25 @@
             </div>
         </div>
       </div>
-      <div id="containerLayout" class="container">
+      <div id="containerLayout" class="container  rounded-0  containerBaseData row no-gutters tab-pane fadein">
         {% include 'MapbenderManagerBundle:Application:form-elements.html.twig' %}
       </div>
-      <div id="containerLayers" class="container">
+      <div id="containerLayers" class="container  rounded-0  containerBaseData row no-gutters tab-pane fadein">
         {% include 'MapbenderManagerBundle:Application:form-layersets.html.twig' %}
       </div>
-      <div id="containerCustomCss" class="container containerCustomCss">
+      <div id="containerCustomCss" class="container  rounded-0  containerBaseData row no-gutters tab-pane fadein">
         {% include 'MapbenderManagerBundle:Application:form-css.html.twig' %}
       </div>
-      <div id="containerSecurity" class="container containerSecurity">
+      <div id="containerSecurity" class="container  rounded-0   row no-gutters tab-pane fadein">
         {% block securityTab %}
           {% include 'MapbenderManagerBundle:Application:form-security.html.twig' %}
         {% endblock %}
       </div>
     </div>
-    <div class="clearContainer"></div>
-    <div class="button-group">
-        <input type="submit" value="{{ 'mb.manager.admin.application.save' | trans }}" class="button"/>
-        <a href="{{ path('mapbender_manager_application_index') }}" class="button critical">{{ 'mb.manager.admin.application.cancel' | trans}}</a>
+    </div>
+    <div class="form-group">
+        <button type="submit" value="{{ 'mb.manager.admin.application.save' | trans }}" class="btn btn-success">{{ 'mb.manager.admin.application.save' | trans }}</button>
+        <a href="{{ path('mapbender_manager_application_index') }}" class="btn btn-critical">{{ 'mb.manager.admin.application.cancel' | trans}}</a>
     </div>
     {{ form_row(form._token) }}
     {{ form_end(form, {"render_rest": false}) }}

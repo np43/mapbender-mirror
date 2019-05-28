@@ -12,12 +12,15 @@
 
 {% block manager_content %}
     {{ form_start(form, {"attr": {"action": path('mapbender_manager_application_create'), "novalidate": "novalidate"}}) }}
-    <div id="applicationTabContainer" class="tabContainer applicationTabContainer">
-      <ul class="tabs">
-        <li id="tabBaseData" class="tab active">{{"mb.manager.admin.application.new.base_data" | trans }}</li>
-        <li id="tabSecurity" class="tab">{{"mb.manager.admin.application.security.title" | trans }}</li>
-      </ul>
-      <div id="containerBaseData" class="container active containerBaseData row no-gutters">
+    <div id="applicationTabContainer" class="container-fluid tabContainer applicationTabContainer">
+        <nav>
+            <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                <a  class="nav-item nav-link  active" data-toggle="tab" href="#containerBaseData"> {{"mb.manager.admin.application.new.base_data" | trans }}</a></li>
+                <a  class="nav-item nav-link " data-toggle="tab" href="#containerSecurity"> {{"mb.manager.admin.application.security.title" | trans }}</a> </li>
+            </div>
+        </nav>
+    <div class="tab-content">
+      <div id="containerBaseData" class="container active rounded-0  containerBaseData row no-gutters tab-pane fadein active">
           <div class="col-xs-8">
             <label class="labelInput" for="{{ form.title.vars.id }}">{{"mb.manager.admin.application.template" | trans}}:<span class="required">*</span></label>
             {{ form_widget(form.template) }}
@@ -30,16 +33,16 @@
            </div>
       </div>
 
-      <div id="containerSecurity" class="container containerSecurity">
+      <div id="containerSecurity" class="container rounded-0  containerSecurity row no-gutters tab-pane fadein ">
         {% block securityTab %}
           {% include 'MapbenderManagerBundle:Application:form-security.html.twig' %}
         {% endblock %}
       </div>
     </div>
-
+    </div>
     <div class="button-group">
-      <input type="submit" value="{{ 'mb.manager.admin.application.btn.create' | trans }}" class="button"/>
-      <a href="{{ path('mapbender_manager_application_index') }}" class="button critical">{{ 'mb.manager.admin.application.btn.cancel' | trans}}</a>
+      <button type="submit" value="{{ 'mb.manager.admin.application.btn.create' | trans }}" class="btn btn-success">{{ 'mb.manager.admin.application.btn.create' | trans }}</button>
+      <a href="{{ path('mapbender_manager_application_index') }}" class="btn btn-warning">{{ 'mb.manager.admin.application.btn.cancel' | trans}}</a>
     </div>
 
     {{ form_row(form._token) }}

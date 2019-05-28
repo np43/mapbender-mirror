@@ -5,15 +5,11 @@
   .tab{
     margin-right:3px;
     color:$middleFontColor;
-    background-color:$contentColor;
+    //background-color:$contentColor;
     cursor:pointer;
     height:$tabHeight;
     z-index:10;
-    border:{
-      left:solid 1px $thirdColor;
-      top:solid 1px $thirdColor;
-      right:solid 1px $thirdColor;
-    }
+
     float:left;
     padding:3px 10px 3px 10px;
     @include relative('' '' '-$tabPopHeight*2' '');
@@ -37,7 +33,7 @@
     padding:$space;
     z-index:20;
     position:relative;
-    background-color:$contentColor;
+    //background-color:$contentColor;
     border:{
       top:solid 3px $thirdColor;
       left:solid 1px $thirdColor;
