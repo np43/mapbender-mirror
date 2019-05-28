@@ -51,8 +51,9 @@ $(function() {
     var popup;
 
     function startEditElement(formUrl, strings, extraButtons) {
+
         $.ajax(formUrl).then(function(response) {
-            popup = new popupCls({
+          /*  popup = new popupCls({
                 title: Mapbender.trans(strings.title || 'mb.manager.components.popup.edit_element.title'),
                 subTitle: strings.subTitle || '',
                 modal: true,
@@ -63,21 +64,48 @@ $(function() {
                 buttons: (extraButtons || []).slice().concat([
                     {
                         label: Mapbender.trans(strings.save || 'mb.manager.components.popup.edit_element.btn.ok'),
-                        cssClass: 'button',
+                        cssClass: 'btn btn-success',
                         callback: function() {
-                            elementFormSubmit();
+
                         }
                     },
                     {
                         label: Mapbender.trans(strings.cancel || 'mb.manager.components.popup.edit_element.btn.cancel'),
                         cssClass: 'button buttonCancel critical',
                         callback: function() {
-                            this.close();
+
                         }
                     }
                 ])
-            });
-            popup.$element.on('change', function(event) {
+            }); */
+            $modalContent  = $('<div />').addClass("modal-content container");
+
+            $modalWrapper = $('<div />').addClass("modal bd-example-modal-lg fade modal-full");
+            $modalDialog  = $('<div />').addClass("container ");
+            $btns = $('<div />').addClass('form-group');
+            $btnOk = $('<button />')
+                .addClass('btn btn-success')
+                .text(Mapbender.trans(strings.title || 'mb.manager.components.popup.edit_element.title'))
+                .click(function(){
+                this.elementFormSubmit();
+            }.bind(this))
+            ;
+            $btnCancel = $('<button />')
+                .addClass('btn btn-warning')
+                .text(Mapbender.trans(strings.cancel || 'mb.manager.components.popup.edit_element.btn.cancel'))
+                .click(function(){
+                    $modalWrapper.modal('dispose');
+            }.bind(this))
+            ;
+            $btns.append($btnOk).append($btnCancel);
+            $dialogCtn = $(response);
+            $dialogCtn.append($btns);
+            $modalContent.append($dialogCtn);
+            $modalDialog.append($modalContent);
+            $modalWrapper.append($modalDialog);
+            $("body").append($modalWrapper);
+            $modalWrapper.modal();
+            /*popup.$element.on('change', function(event) {
                 $('#elementForm', popup.$element).data('dirty', true);
             });
             popup.$element.on('close', function(event, token) {
@@ -86,8 +114,8 @@ $(function() {
                         token.cancel = true;
                     }
                 }
-            });
-        });
+            });*/
+        }.bind(this));
     }
 
     function startElementChooser(regionName, listUrl) {
