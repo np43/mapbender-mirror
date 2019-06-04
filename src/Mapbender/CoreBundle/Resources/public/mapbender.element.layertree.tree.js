@@ -6,7 +6,6 @@
             autoOpen: false,
             useTheme: false,
             target: null,
-            titlemaxlength: 40,
             layerInfo: true, //!!!
             showBaseSource: true,
             showHeader: false,
@@ -37,6 +36,7 @@
             outOfBounds: '',
             parentInvisible: ''
         },
+        _mobilePane: null,
         _create: function() {
             this.loadStarted = {};
             this.sourceAtTree = {};
@@ -44,17 +44,17 @@
                 return;
             }
             var self = this;
+            this._mobilePane = $(this.element).closest('#mobilePane').get(0) || null;
             Mapbender.elementRegistry.onElementReady(this.options.target, $.proxy(self._setup, self));
         },
         _setup: function() {
             this.transConst.outOfScale = Mapbender.trans("mb.core.layertree.const.outofscale");
             this.transConst.outOfBounds = Mapbender.trans("mb.core.layertree.const.outofbounds");
             this.transConst.parentInvisible = Mapbender.trans("mb.core.layertree.const.parentinvisible");
-            this.options.titlemaxlength = parseInt(this.options.titlemaxlength);
             this.elementUrl = Mapbender.configuration.application.urls.element + '/' + this.element.attr('id') + '/';
             this.template = $('li', this.element).remove();
             this.template.removeClass('hidden');
-            this.menuTemplate = $('#layer-menu', this.template).remove();
+            this.menuTemplate = $('.layer-menu', this.template).remove();
 
             this.model = $("#" + this.options.target).data("mapbenderMbMap").getModel();
             if (this.options.type === 'element') {
@@ -63,6 +63,7 @@
                 this.open();
             }
             this.element.removeClass('hidden');
+            this._createEvents();
             this._trigger('ready');
         },
         _createTree: function() {
@@ -71,14 +72,9 @@
             if (this.created)
                 this._unSortable();
             for (var i = (sources.length - 1); i > -1; i--) {
-                if (!sources[i].configuration.isBaseSource
-                    || (sources[i].configuration.isBaseSource && this.options.showBaseSource)) {
-                    if (this.options.displaytype === "tree") {
-                        var li_s = this._createSourceTree(sources[i], this.model.getScale());
-                        this._addNode(li_s, sources[i]);
-                    } else {
-                        return;
-                    }
+                if (this.options.showBaseSource || !sources[i].configuration.isBaseSource) {
+                    var li_s = this._createSourceTree(sources[i]);
+                    this._addNode(li_s, sources[i]);
                     this.sourceAtTree[sources[i].id ] = {
                         id: sources[i].id
                     };
@@ -87,13 +83,6 @@
             }
 
             this._reset();
-
-            $(document).bind('mbmapsourceloadstart', $.proxy(self._onSourceLoadStart, self));
-            $(document).bind('mbmapsourceloadend', $.proxy(self._onSourceLoadEnd, self));
-            $(document).bind('mbmapsourceloaderror', $.proxy(self._onSourceLoadError, self));
-            $(document).bind('mbmapsourceadded', $.proxy(self._onSourceAdded, self));
-            $(document).bind('mbmapsourcechanged', $.proxy(self._onSourceChanged, self));
-            $(document).bind('mbmapsourceremoved', $.proxy(self._onSourceRemoved, self));
             this.created = true;
         },
         _addNode: function($toAdd, source) {
@@ -115,7 +104,6 @@
             $targetList.append($toAdd);
         },
         _reset: function() {
-            this._resetEvents();
             this._resetSortable();
             this._resetCheckboxes();
             this._setSourcesCount();
@@ -129,35 +117,20 @@
             this.element.on('click', '#delete-all', $.proxy(self._removeAllSources, self));
             this.element.on('click', '.layer-menu-btn', $.proxy(self._toggleMenu, self));
             this.element.on('click', '.selectAll', $.proxy(self._selectAll, self));
-        },
-        _removeEvents: function() {
-            var self = this;
-            this.element.off('change', 'input[name="sourceVisibility"]', $.proxy(self._toggleSourceVisibility, self));
-            this.element.off('change', 'input[name="selected"]', $.proxy(self._toggleSelected, self));
-            this.element.off('change', 'input[name="info"]', $.proxy(self._toggleInfo, self));
-            this.element.off('click', '.iconFolder', $.proxy(self._toggleContent, self));
-            this.element.off('click', '#delete-all', $.proxy(self._removeAllSources, self));
-            this.element.off('click', '.layer-menu-btn', $.proxy(self._toggleMenu, self));
-            this.element.off('click', '.selectAll', $.proxy(self._selectAll, self));
-
-        },
-        _resetEvents: function() {
-            this._removeEvents();
-            this._createEvents();
-        },
-        _resetCheckboxes: function() {
-            var self = this;
-            this.element.off('change', 'input[name="sourceVisibility"]', $.proxy(self._toggleSourceVisibility, self));
-            this.element.off('change', 'input[name="selected"]', $.proxy(self._toggleSelected, self));
-            this.element.off('change', 'input[name="info"]', $.proxy(self._toggleInfo, self));
-            this.element.on('change', 'input[name="sourceVisibility"]', $.proxy(self._toggleSourceVisibility, self));
-            this.element.on('change', 'input[name="selected"]', $.proxy(self._toggleSelected, self));
-            this.element.on('change', 'input[name="info"]', $.proxy(self._toggleInfo, self));
-            if (initCheckbox) {
-                $('.checkbox', self.element).each(function() {
-                    initCheckbox.call(this);
+            $(document).bind('mbmapsourceloadstart', $.proxy(self._onSourceLoadStart, self));
+            $(document).bind('mbmapsourceloadend', $.proxy(self._onSourceLoadEnd, self));
+            $(document).bind('mbmapsourceloaderror', $.proxy(self._onSourceLoadError, self));
+            $(document).bind('mbmapsourceadded', $.proxy(self._onSourceAdded, self));
+            $(document).bind('mbmapsourcechanged', $.proxy(self._onSourceChanged, self));
+            $(document).bind('mbmapsourceremoved', $.proxy(self._onSourceRemoved, self));
+            if (this._mobilePane) {
+                $(this.element).on('click', '.leaveContainer', function() {
+                    $('input[name="selected"]', this).click();
                 });
             }
+        },
+        _resetCheckboxes: function() {
+            $('input[type="checkbox"]', this.element).mbCheckbox();
         },
         _resetSortable: function() {
             this._unSortable();
@@ -270,8 +243,9 @@
             $('.layer-menu-btn', $li).remove();
             return $li;
         },
-        _createNode: function(source, sourceEl, config, isroot) {
+        _createNode: function(source, sourceEl, isroot) {
             var $li = this.template.clone();
+            var config = this._getNodeProporties(sourceEl);
             $li.removeClass('hide-elm');
             $li.attr('data-id', sourceEl.options.id);
             $li.attr('data-sourceid', source.id);
@@ -297,12 +271,7 @@
             }
             $li.addClass(config.reorder);
             $li.find('.layer-state').attr('title', config.visibility.tooltip);
-            $li.find('input.layer-selected').prop('checked', config.selected ? true : false);
-            if (!config.selectable)
-                $li.find('input.layer-selected').prop('disabled', true);
-            $li.find('input.layer-info').prop('checked', config.info ? true : false);
-            if (!config.infoable || config.infoable === '0')
-                $li.find('input.layer-info').prop('disabled', true);
+            this._updateLayerDisplay($li, sourceEl);
             var infoHidden = false;
             if (this.options.hideInfo) {
                 infoHidden = true;
@@ -321,8 +290,9 @@
                 }
                 $folder.removeClass('iconFolder');
             }
-            $li.find('.layer-title:first').attr('title', sourceEl.options.title).text(this._subStringText(
-                sourceEl.options.title));
+            $li.find('.layer-title:first')
+                .attr('title', sourceEl.options.title)
+                .text(sourceEl.options.title);
             if (this.options.menu.length === 0) {
                 $li.find('.layer-menu-btn').remove();
             }
@@ -338,20 +308,21 @@
 
             return $li;
         },
-        _createSourceTree: function(source, scale) {
-            var li = this._createLayerNode(source, source.configuration.children[0], scale, source.type, true);
+        _createSourceTree: function(source) {
+            var li = this._createLayerNode(source, source.configuration.children[0]);
             if (source.configuration.status !== 'ok') {
                 li.attr('data-state', 'error').find('span.layer-title:first').attr("title",
                     source.configuration.status);
             }
             return li;
         },
-        _createLayerNode: function(source, sourceEl, scale, isroot) {
-            var config = this._getNodeProporties(sourceEl);
-            var li = this._createNode(source, sourceEl, config, isroot);
-            if (sourceEl.children) {
-                for (var j = sourceEl.children.length; j > 0; j--) {
-                    li.find('ul:first').append(this._createLayerNode(source, sourceEl.children[j - 1], scale, false));
+        _createLayerNode: function(source, sourceEl) {
+            var isRoot = sourceEl === source.configuration.children[0];
+            var li = this._createNode(source, sourceEl, isRoot);
+            if (sourceEl.children && sourceEl.children.length) {
+                var $subList = $('ul:first', li);
+                for (var j = sourceEl.children.length - 1; j >= 0; j--) {
+                    $subList.append(this._createLayerNode(source, sourceEl.children[j]));
                 }
             }
             return li;
@@ -364,7 +335,7 @@
                 return;
             }
             if (this.options.displaytype === "tree") {
-                var li_s = this._createSourceTree(added.source, this.model.getScale());
+                var li_s = this._createSourceTree(added.source);
                 var first_li = $(this.element).find('ul.layers:first li:first');
                 if (first_li && first_li.length !== 0) {
                     first_li.before(li_s);
@@ -419,7 +390,6 @@
             }
         },
         _resetSourceAtTree: function(source) {
-            // console.warn("Skipping _resetSourceAtTree call"); return;
             var self = this;
             function resetSourceAtTree(layer, parent) {
                 var $li = $('li[data-id="' + layer.options.id + '"]', self.element);
@@ -443,27 +413,42 @@
                         }
                         var newTreeOptions = (layerSettings.options || {}).treeOptions;
                         var newLayerState = layerSettings.state;
-                        if (!newLayerState && newTreeOptions) {
+                        if (!newLayerState && newTreeOptions && typeof newTreeOptions.selected !== 'undefined') {
                             newLayerState = {visibility: newTreeOptions.selected};
                         }
-                        if (newLayerState) {
-                            this._redisplayLayerState($li, newLayerState);
-                        }
-
-                        if (newTreeOptions) {
-                            if (typeof newTreeOptions.selected !== 'undefined') {
-                                var $selectedChk = $('input[name="selected"]:first', $li);
-                                $selectedChk.prop('checked', !!newTreeOptions.selected);
-                                initCheckbox.call($selectedChk);
-                            }
-                            if (typeof newTreeOptions.info !== 'undefined') {
-                                var $infoChk = $('input[name="info"]:first', $li);
-                                $infoChk.prop('checked', !!newTreeOptions.info);
-                                initCheckbox.call($infoChk);
-                            }
-                        }
+                        this._updateLayerDisplay($li, {
+                            state: newLayerState,
+                            options: layerSettings.options
+                        });
+                        $('input[type="checkbox"]', $li).mbCheckbox();
                     }
                 }
+            }
+        },
+        _updateLayerDisplay: function($li, layer) {
+            if (layer && layer.state && Object.keys(layer.state).length) {
+                this._redisplayLayerState($li, layer.state);
+            }
+            if (layer && Object.keys((layer.options || {}).treeOptions).length) {
+                var $checkboxScope = $('>.leaveContainer', $li);
+                this._updateLayerCheckboxes($checkboxScope, layer.options.treeOptions);
+            }
+        },
+        _updateLayerCheckboxes: function($scope, treeOptions) {
+            var allow = treeOptions.allow || {};
+            var $selectedChk = $('input[name="selected"]:first', $scope);
+            var $infoChk = $('input[name="info"]:first', $scope);
+            if (treeOptions.selected !== null && typeof treeOptions.selected !== 'undefined') {
+                $selectedChk.prop('checked', !!treeOptions.selected);
+            }
+            if (allow.selected !== null && typeof allow.selected !== 'undefined') {
+                $selectedChk.prop('disabled', !allow.selected);
+            }
+            if (treeOptions.info !== null && typeof treeOptions.info !== 'undefined') {
+                $infoChk.prop('checked', !!treeOptions.info);
+            }
+            if (allow.info !== null && typeof allow.info !== 'undefined') {
+                $infoChk.prop('disabled', !allow.info);
             }
         },
         _removeChild: function(changed) {
@@ -511,25 +496,6 @@
                     option.error.details);
             }
         },
-        _subStringText: function(text) {
-            if(text === null) {
-                return '';
-            }
-            if (text.length <= this.options.titlemaxlength) {
-                return text;
-            } else {
-                for (var i = this.options.titlemaxlength; i > 0; i--) {
-                    if (text[i] === " ") {
-                        text = text.substring(0, i) + "...";
-                        break;
-                    }
-                }
-                if (text.length < 2 || text.length > this.options.titlemaxlength + 3)
-                    return text.substring(0, this.options.titlemaxlength) + "...";
-                else
-                    return text;
-            }
-        },
         _getNodeType: function(node, isroot) {
             if (isroot) {
                 return this.consts.root;
@@ -544,7 +510,6 @@
                 selected: nodeConfig.options.treeOptions.selected,
                 selectable: nodeConfig.options.treeOptions.allow.selected,
                 info: nodeConfig.options.treeOptions.info,
-                infoable: nodeConfig.options.treeOptions.allow.info,
                 reorderable: nodeConfig.options.treeOptions.allow.reorder
             };
 
@@ -610,6 +575,9 @@
                 var active = $chkSource.prop('checked') && $sourceVsbl.prop('checked');
                 self.model.setSourceVisibility($item.attr('data-sourceid'), active);
             });
+            if (this._mobilePane) {
+                $('#mobilePaneClose', this._mobilePane).click();
+            }
             return false;
         },
         _selectAll: function(e) {
@@ -637,7 +605,7 @@
                         options.layers[$layerLi.attr('data-id')] = value;
                     }
                 });
-                self.model.changeLayerState(source, options, false, true);
+                self.model.changeLayerState(source, options, null);
             });
             return false;
         },
@@ -651,6 +619,9 @@
             } else {
                 this.model.controlLayer(sourceId, $li.attr('data-id'), $(e.target).prop('checked'));
             }
+            if (this._mobilePane) {
+                $('#mobilePaneClose', this._mobilePane).click();
+            }
             return false;
         },
         _toggleInfo: function(e) {
@@ -659,9 +630,9 @@
         },
         currentMenu: null,
         closeMenu: function(menu) {
-            //menu.find('.layer-zoom').off('click');
-            //menu.find('.layer-metadata').off('click');
-            menu.off('click').remove();
+            var $menu = menu || this.currentMenu;
+            $menu.remove();
+            this.currentMenu = null;
             return false;
         },
         _toggleMenu: function(e) {
@@ -674,17 +645,10 @@
                 var menu = $(self.menuTemplate.clone().attr("data-menuLayerId", layerId).attr("data-menuSourceId",
                     sourceId));
                 var exitButton = menu.find('.exit-button');
-                var previousMenu = self.currentMenu;
-
-                if (self.currentMenu === menu) {
-                    return;
+                if (self.currentMenu) {
+                    self.closeMenu(self.currentMenu);
                 }
-
                 self.currentMenu = menu;
-
-                if (previousMenu) {
-                    self.closeMenu(previousMenu);
-                }
 
                 exitButton.on('click', function(e) {
                     self.closeMenu(menu);
@@ -694,21 +658,25 @@
                 atLeastOne = removeButton.length > 0;
                 removeButton.on('click', $.proxy(self._removeSource, self));
 
+                var $opacitySliderWrap = $('#layer-opacity', menu);
                 if ($element.parents('li:first').attr('data-type') !== self.consts.root) {
-                    menu.find('#layer-opacity').remove();
+                    $opacitySliderWrap.remove();
                     menu.find('#layer-opacity-title').remove();
+                    $opacitySliderWrap = [];
                 }
 
                 menu.removeClass('hidden');
-                $element.after(menu);
+
+                $element.closest('.leaveContainer').after(menu);
                 $(menu).on('mousedown mousemove', function(e) {
                     e.stopPropagation();
                 });
 
-                if ($.inArray("opacity", self.options.menu) !== -1 && menu.find('#layer-opacity').length > 0) {
+                if ($.inArray("opacity", self.options.menu) !== -1 && $opacitySliderWrap.length) {
                     atLeastOne = true;
-                    $('.layer-opacity-handle').attr('unselectable', 'on');
-                    new Dragdealer('layer-opacity', {
+                    var $handle = $('.layer-opacity-handle', menu);
+                    $handle.attr('unselectable', 'on');
+                    new Dragdealer($opacitySliderWrap.get(0), {
                         x: source.configuration.options.opacity,
                         horizontal: true,
                         vertical: false,
@@ -717,7 +685,7 @@
                         handleClass: "layer-opacity-handle",
                         animationCallback: function(x, y) {
                             var percentage = Math.round(x * 100);
-                            $("#layer-opacity").find(".layer-opacity-handle").text(percentage);
+                            $handle.text(percentage);
                             self._setOpacity(self.model.findSource({
                                 id: sourceId
                             })[0], percentage / 100.0);
@@ -734,82 +702,18 @@
                 } else {
                     $('.layer-zoom', menu).remove();
                 }
-
-                if ($.inArray("metadata", self.options.menu) === -1 || menu.find(
-                    '.layer-metadata').length === 0 || (source.hasOwnProperty('wmsloader') && source.wmsloader === true) || isNaN(parseInt(source.origId))) {
-                    $('.layer-metadata', menu).remove();
-                } else {
+                if (self.options.menu.indexOf('metadata') !== -1 && source.supportsMetadata() && $('.layer-metadata', menu).length) {
                     atLeastOne = true;
-                    var layer = self.model.findLayer({
-                        id: sourceId
-                    },
-                    {
-                        id: layerId
-                    });
-                    if (layer) {
-                        $('.layer-metadata', menu).removeClass('inactive').on('click', $.proxy(self._showMetadata,
-                            self));
-                    }
+                    $('.layer-metadata', menu).removeClass('inactive').on('click', $.proxy(self._showMetadata,
+                        self));
+                } else {
+                    $('.layer-metadata', menu).remove();
                 }
                 var dims = source.configuration.options.dimensions ? source.configuration.options.dimensions : [];
                 if ($.inArray("dimension", self.options.menu) !== -1 && source.type === 'wms'
                     && source.configuration.children[0].options.id === layerId && dims.length > 0) {
+                    self._initDimensionsMenu($element, menu, dims, source);
                     atLeastOne = true;
-                    var lastItem = $('.layer-dimension-checkbox', menu).prev();
-                    var dimCheckbox = $('.layer-dimension-checkbox', menu).remove();
-                    var dimTitle = $('.layer-dimension-title', menu).remove();
-                    var dimBar = $('.layer-dimension-bar', menu).remove();
-                    var dimTextfield = $('.layer-dimension-textfield', menu).remove();
-                    $.each(dims, function(idx, item) {
-                        var chkbox = dimCheckbox.clone();
-                        var title = dimTitle.clone();
-                        lastItem.after(chkbox);
-                        var inpchkbox = chkbox.find('.checkbox');
-                        inpchkbox.data('dimension', item);
-                        inpchkbox.on('change', function(e) {
-                            self._callDimension(source, $(e.target));
-                        });
-                        initCheckbox.call(inpchkbox);
-                        title.attr('title', title.attr('title') + ' ' + item.name);
-                        title.attr('id', title.attr('id') + item.name);
-                        chkbox.after(title);
-                        if (item.type === 'single') {
-                            var textf = dimTextfield.clone();
-                            title.after(textf);
-                            textf.val(item.extent);
-                            inpchkbox.attr('data-value', item.extent);
-                            lastItem = textf;
-                        } else if (item.type === 'multiple' || item.type === 'interval') {
-                            var bar = dimBar.clone();
-                            title.after(bar);
-                            bar.removeClass('layer-dimension-bar');
-                            bar.attr('id', bar.attr('id') + item.name);
-                            bar.find('.layer-dimension-handle').removeClass('layer-dimension-handle').
-                                addClass('layer-dimension-' + item.name + '-handle').attr('unselectable', 'on');
-                            lastItem = bar;
-                            var dimHandler = Mapbender.Dimension(item);
-                            var label = $('#layer-dimension-value-' + item.name, menu);
-                            new Dragdealer('layer-dimension-' + item.name, {
-                                x: dimHandler.partFromValue(dimHandler.getDefault()),
-                                horizontal: true,
-                                vertical: false,
-                                speed: 1,
-                                steps: dimHandler.getStepsNum(),
-                                handleClass: 'layer-dimension-' + item.name + '-handle',
-                                callback: function(x, y) {
-                                    self._callDimension(source, inpchkbox);
-                                },
-                                animationCallback: function(x, y) {
-                                    var value = dimHandler.valueFromPart(x);
-                                    label.text(value);
-                                    inpchkbox.attr('data-value', value);
-                                }
-                            });
-                        } else {
-                            Mapbender.error("Source dimension " + item.type + " is not supported.");
-                            return;
-                        }
-                    });
                 } else {
                     $('.layer-dimension-checkbox', menu).remove();
                     $('.layer-dimension-title', menu).remove();
@@ -825,16 +729,92 @@
             var $btnMenu = $(e.target);
             var currentLayerId = $btnMenu.parents('li:first').attr("data-id");
             var currentSourceId = $btnMenu.parents('li[data-sourceid]:first').attr("data-sourceid");
-            if ($('#layer-menu').length !== 0) {
-                var layerIdMenu = $('#layer-menu').attr("data-menuLayerId");
-                //removeMenu($('#layer-menu'));
-                if (layerIdMenu !== currentLayerId) {
-                    createMenu($btnMenu, currentSourceId, currentLayerId);
+            var layerIdMenu = null;
+            var $menu = this.currentMenu || $('.layer-menu', this.element);
+            if ($menu.length) {
+                layerIdMenu = $menu.attr("data-menuLayerId");
+            }
+            if (layerIdMenu !== currentLayerId) {
+                if ($menu.length) {
+                    this.closeMenu($menu);
                 }
-            } else {
                 createMenu($btnMenu, currentSourceId, currentLayerId);
+
             }
             return false;
+        },
+        _initDimensionsMenu: function($element, menu, dims, source) {
+            var self = this;
+            var lastItem = $('.layer-dimension-checkbox', menu).prev();
+            var dimCheckbox = $('.layer-dimension-checkbox', menu).remove();
+            var dimTitle = $('.layer-dimension-title', menu).remove();
+            var dimBar = $('.layer-dimension-bar', menu).remove();
+            var dimTextfield = $('.layer-dimension-textfield', menu).remove();
+            $.each(dims, function(idx, item) {
+                var dimData = $element.data('dimensions') || {};
+                var dimDataKey = source.id + '~' + idx;
+                dimData[dimDataKey] = dimData[dimDataKey] || {
+                    checked: false
+                };
+                var updateData = function(props) {
+                    $.extend(dimData[dimDataKey], props);
+                    var ourData = {};
+                    ourData[dimDataKey] = dimData[dimDataKey];
+                    var mergedData = $.extend($element.data('dimensions') || {}, ourData);
+                    $element.data('dimensions', mergedData);
+                };
+                var chkbox = dimCheckbox.clone();
+                var title = dimTitle.clone();
+                lastItem.after(chkbox);
+                var inpchkbox = chkbox.find('.checkbox');
+                inpchkbox.data('dimension', item);
+                inpchkbox.prop('checked', dimData[dimDataKey].checked);
+                inpchkbox.on('change', function(e) {
+                    updateData({checked: $(this).prop('checked')});
+                    self._callDimension(source, $(e.target));
+                });
+                inpchkbox.mbCheckbox();
+                title.attr('title', title.attr('title') + ' ' + item.name);
+                title.attr('id', title.attr('id') + item.name);
+                chkbox.after(title);
+                if (item.type === 'single') {
+                    var textf = dimTextfield.clone();
+                    title.after(textf);
+                    textf.val(item.extent);
+                    inpchkbox.attr('data-value', dimData.value || item.extent);
+                    updateData({value: dimData.value || item.extent});
+                    lastItem = textf;
+                } else if (item.type === 'multiple' || item.type === 'interval') {
+                    var bar = dimBar.clone();
+                    title.after(bar);
+                    bar.removeClass('layer-dimension-bar');
+                    bar.attr('id', bar.attr('id') + item.name);
+                    bar.find('.layer-dimension-handle').removeClass('layer-dimension-handle').
+                        addClass('layer-dimension-' + item.name + '-handle').attr('unselectable', 'on');
+                    lastItem = bar;
+                    var dimHandler = Mapbender.Dimension(item);
+                    var label = $('#layer-dimension-value-' + item.name, menu);
+                    new Dragdealer('layer-dimension-' + item.name, {
+                        x: dimHandler.partFromValue(dimData[dimDataKey].value || dimHandler.getDefault()),
+                        horizontal: true,
+                        vertical: false,
+                        speed: 1,
+                        steps: dimHandler.getStepsNum(),
+                        handleClass: 'layer-dimension-' + item.name + '-handle',
+                        callback: function(x, y) {
+                            self._callDimension(source, inpchkbox);
+                        },
+                        animationCallback: function(x, y) {
+                            var value = dimHandler.valueFromPart(x);
+                            label.text(value);
+                            updateData({value: value});
+                            inpchkbox.attr('data-value', value);
+                        }
+                    });
+                } else {
+                    Mapbender.error("Source dimension " + item.type + " is not supported.");
+                }
+            });
         },
         _callDimension: function(source, chkbox) {
             var dimension = chkbox.data('dimension');
@@ -843,13 +823,11 @@
             if (chkbox.is(':checked')) {
                 this.model.resetSourceUrl(source, {
                     'add': params
-                },
-                true);
+                });
             } else if (params[dimension['__name']]) {
                 this.model.resetSourceUrl(source, {
                     'remove': params
-                },
-                true);
+                });
             }
             return true;
         },
@@ -881,10 +859,6 @@
 
             this._setSourcesCount();
         },
-        _showLegend: function(elm) {
-        },
-        _exportKml: function(elm) {
-        },
         _zoomToLayer: function(e) {
             var options = {
                 sourceId: $(e.target).parents('div.layer-menu:first').attr("data-menuSourceId"),
@@ -893,49 +867,35 @@
             this.model.zoomToLayer(options);
         },
         _showMetadata: function(e) {
-            Mapbender.Metadata.call(
-                this.options.target,
-                {
-                    id: $(
-                        e.target).
-                        parents(
-                            'div.layer-menu:first').
-                        attr(
-                            "data-menuSourceId")
-                },
-            {
-                id: $(
-                    e.target).
-                    parents(
-                        'div.layer-menu:first').
-                    attr(
-                        "data-menuLayerId")
-            }
-            );
+            var $layer = $(e.target).closest('.leave', this.element);
+            var sourceOpts = {id: $layer.attr('data-sourceid')};
+            var layerOpts = {id: $layer.attr('data-id')};
+            Mapbender.Metadata.call(this.options.target, sourceOpts, layerOpts);
+        },
+        _getUniqueSourceIds: function() {
+            var sourceIds = [];
+            $('.serviceContainer[data-sourceid]', this.element).each(function() {
+                sourceIds.push($(this).attr('data-sourceid'));
+            });
+            return _.uniq(sourceIds);
         },
         _setSourcesCount: function() {
-            var countObj = {};
-            $(this.element).find("#list-root li[data-sourceid]").each(function(idx, elm) {
-                countObj[$(elm).attr('data-sourceid')] = true;
-            });
-            var num = 0;
-            for (s in countObj)
-                num++;
+            var num = this._getUniqueSourceIds().length;
             $(this.element).find('#counter').text(num);
         },
         _removeAllSources: function(e) {
-            var self = this;
+            var sourceIds, i, n;
             if (Mapbender.confirm(Mapbender.trans("mb.core.layertree.confirm.allremove"))) {
-                $(this.element).find("#list-root li[data-sourceid]").each(function(idx, elm) {
-                    var sourceId = $(elm).attr('data-sourceid');
-                    self.model.removeSource({
+                sourceIds = this._getUniqueSourceIds();
+                for (i = 0, n = sourceIds.length; i < n; ++i) {
+                    this.model.removeSource({
                         remove: {
                             sourceIdx: {
-                                id: sourceId
+                                id: sourceIds[i]
                             }
                         }
                     });
-                });
+                }
             }
             this._setSourcesCount();
         },

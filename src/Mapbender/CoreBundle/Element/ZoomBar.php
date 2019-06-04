@@ -84,6 +84,43 @@ class ZoomBar extends Element
         return 'mapbender.mbZoomBar';
     }
 
+    public function getFrontendTemplatePath($suffix = '.html.twig')
+    {
+        return 'MapbenderCoreBundle:Element:zoombar.html.twig';
+    }
+
+    public function getPublicConfiguration()
+    {
+        $defaults = $this->getDefaultConfiguration();
+        $config = $this->entity->getConfiguration();
+        // Fix dichotomy 'stepSize' (actual backend form field name) vs 'stepsize' (legacy / some YAML applications)
+        // Fix dichotomy 'stepByPixel' (actual) vs 'stepbypixel' (legacy / YAML applications)
+        if (empty($config['stepSize'])) {
+            if (!empty($config['stepsize'])) {
+                $config['stepSize'] = $config['stepsize'];
+            } else {
+                $config['stepSize'] = $defaults['stepSize'];
+            }
+        }
+        if (!isset($config['stepByPixel'])) {
+            if (isset($config['stepbypixel'])) {
+                $config['stepByPixel'] = $config['stepbypixel'];
+            } else {
+                $config['stepByPixel'] = $defaults['stepByPixel'];
+            }
+        }
+        // Fix weird mis-treatment of boolean 'stepByPixel' as string (it's a dropdown!)
+        if ($config['stepByPixel'] === 'false') {
+            $config['stepByPixel'] = false;
+        } else {
+            // coerce all other values (including string "true") to boolean regularly
+            $config['stepByPixel'] = !!$config['stepByPixel'];
+        }
+        unset($config['stepsize']);
+        unset($config['stepbypixel']);
+        return $config;
+    }
+
     /**
      * @inheritdoc
      */
@@ -94,14 +131,11 @@ class ZoomBar extends Element
             && !in_array("zoom_in_out", $configuration['components'])) {
             $configuration['components'][] = "zoom_in_out";
         }
-        return $this->container->get('templating')->render(
-            'MapbenderCoreBundle:Element:zoombar.html.twig',
-            array(
-                'id' => $this->getId(),
-                "title" => $this->getTitle(),
-                'configuration' => $configuration
-            )
-        );
+        return $this->container->get('templating')->render($this->getFrontendTemplatePath(),  array(
+            'id' => $this->getId(),
+            "title" => $this->getTitle(),
+            'configuration' => $configuration,
+        ));
     }
 
     /**

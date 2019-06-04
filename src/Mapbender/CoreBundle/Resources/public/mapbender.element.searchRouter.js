@@ -8,25 +8,21 @@
         callbackUrl: null,
         selected: null,
         highlightLayer: null,
-        lastSearch: new Date(),
-        resultCallbackEvent: null,
-        resultCallbackProxy: null,
-        searchModel: null,
-        autocompleteModel: null,
         popup: null,
+        mbMap: null,
 
         /**
          * Widget creator
          */
-        _create: function(){
-            var widget = this;
-            var options = widget.options;
-
-            if(!Mapbender.checkTarget("mbSearchRouter", options.target)){
-                return;
-            }
-            Mapbender.elementRegistry.onElementReady(options.target, $.proxy(widget._setup, widget));
-            widget.callbackUrl = Mapbender.configuration.application.urls.element + '/' + widget.element.attr('id') + '/';
+        _create: function() {
+            var self = this;
+            this.callbackUrl = Mapbender.configuration.application.urls.element + '/' + this.element.attr('id') + '/';
+            Mapbender.elementRegistry.waitReady(this.options.target).then(function(mbMap) {
+                self.mbMap = mbMap;
+                self._setup();
+            }, function() {
+                Mapbender.checkTarget("mbSearchRouter", self.options.target);
+            });
         },
 
         /**
@@ -34,68 +30,35 @@
          */
         removeLastResults: function(){
             var widget = this;
-            widget.searchModel.reset();
             widget._getLayer().removeAllFeatures();
+            this.currentFeature = null;
         },
 
-        _setup:         function(){
+        _setup: function() {
             var widget = this;
             var element = widget.element;
             var options = widget.options;
-            var searchModel = widget.searchModel = new Mapbender.SearchModel(null, null, widget);
+
             var routeSelect = $('select#search_routes_route', element);
-            var routeCount = 0;
-            var map = widget.map = $('#' + options.target).data('mapbenderMbMap').map.olMap;
+            var routeCount;
 
-            // bind form reset to reset search model
-            element.delegate('.search-forms form', 'reset', function(){
+            element.on('submit', '.search-forms form', function(evt) {
+                evt.preventDefault();
+                widget._search();
+            });
+            element.on('reset', '.search-forms form', function() {
                 widget.removeLastResults();
             });
-            // bind form submit to send search model
-            element.delegate('.search-forms form', 'submit', function(evt){
-                widget.removeLastResults();
-                widget.searchModel.submit(evt);
-            });
-
-            // bind result to result list and map view
-            searchModel.on('change:results', widget._searchResults, widget);
-            searchModel.on('request', widget._setActive, widget);
-            searchModel.on('error sync', widget._setInactive, widget);
-            searchModel.on('error sync', widget._showResultState, widget);
-
-            widget.resultCallbackProxy = $.proxy(widget._resultCallback, widget);
-
             // Prepare autocompletes
             $('form input[data-autocomplete="on"]', element).each(
                 $.proxy(widget._setupAutocomplete, widget));
             $('form input[data-autocomplete^="custom:"]', element).each(
                 $.proxy(widget._setupCustomAutocomplete, widget));
 
-            // Prepare search button (trigger form submit)
-            $('a[role="search_router_search"]', element)
-                .button()
-                .click(function(){
-                    widget.getCurrentForm().submit();
-                });
-
-            // Prevent map getting cursors keys
-            element.bind('keydown', function(event){
-                event.stopPropagation();
-            });
-
             // Listen to changes of search select (switching and forms resetting)
-
-            routeSelect.change($.proxy(widget._selectSearch, widget));
-            Mapbender.elementRegistry.onElementReady(options.target, function(){
-                routeSelect.change();
-                widget._trigger('ready');
-            });
+            routeSelect.on('change', $.proxy(this._selectSearch, this));
+            routeCount = Object.keys(this.options.routes).length;
             // But if there's only one search, we actually don't need the select
-            for(var route in options.routes){
-                if(options.routes.hasOwnProperty(route)){
-                    routeCount++;
-                }
-            }
             if(routeCount === 1){
                 $('#search_routes_route_control_group').hide()
                     .next('hr').hide();
@@ -117,26 +80,13 @@
                 });
             }
 
-            map.events.register("zoomend", this, function() {
-                widget.redraw();
-            });
-
-            widget._trigger('ready');
-
-            if(widget.options.autoOpen) {
-                widget.open();
+            $(document).on('mbmapsrschanged', this._onSrsChange.bind(this));
+            this._setupResultCallback();
+            routeSelect.trigger('change');
+            if (this.options.autoOpen) {
+                this.open();
             }
-        },
-
-        /**
-         * Redraw current result layer selected feature
-         */
-        redraw: function() {
-            var widget = this;
-            var feature = widget.currentFeature ? widget.currentFeature : null;
-            if( widget.currentFeature) {
-                feature.layer.drawFeature(feature, 'select');
-            }
+            this._trigger('ready');
         },
 
         defaultAction: function(callback){
@@ -179,8 +129,6 @@
                         }
                     });
                     this.popup.$element.on('close', $.proxy(this.close, this));
-                }else{
-
                 }
                 this.element.show();
             }
@@ -235,24 +183,32 @@
         /**
          * Set up autocomplete widgets for all inputs with data-autcomplete="on"
          *
-         * @param  integer      idx   Running index
-         * @param  HTMLDomNode  input Input element
+         * @param {*} idx
+         * @param {Node} input
          */
         _setupAutocomplete: function(idx, input){
-            var widget = this;
-            input = $(input);
-            var ac = input.autocomplete({
-                delay: input.data('autocomplete-delay') || 500,
-                minLength: input.data('autocomplete-minlength') || 3,
-                search: $.proxy(widget._autocompleteSearch, widget),
-                open: function( event, ui, t) {
-                    $(event.target).data("uiAutocomplete").menu.element.outerWidth(input.outerWidth());
+            var self = this;
+            var $input = $(input);
+
+            $input.autocomplete({
+                delay: $input.data('autocomplete-delay') || 500,
+                minLength: $input.data('autocomplete-minlength') || 3,
+                search: function(event) {
+                    self._autocompleteSearch(event);
+                    $input.autocomplete("close");
+                },
+                open: function(event, ui, t) {
+                    console.log("Autocomplete open", arguments);
+                    $(event.target).data("uiAutocomplete").menu.element.outerWidth($input.outerWidth());
                 },
                 source: function(request, response){
-                    widget._autocompleteSource(input, request, response);
-                },
-                select: widget._autocompleteSelect
-            }).keydown(widget._autocompleteKeydown);
+                    self._autocompleteSource($input).then(function(data) {
+                        response(data.results);
+                    }, function() {
+                        response([]);
+                    });
+                }
+            });
         },
 
         /**
@@ -267,49 +223,25 @@
         },
 
         /**
-         * Autocomplete source handler, does all Ajax magic.
+         * Generate autocomplete request
          *
-         * @param  HTMLDomNode target   Input element
-         * @param  Object      request  Request object with term attribute
-         * @param  function    response Autocomplete callback
+         * @param {jQuery} $input
          */
-        _autocompleteSource: function(target, request, response){
-            if(!target.data('autocompleteModel')){
-                var model = new Mapbender.AutocompleteModel(null, {
-                    router: this
-                });
-                target.data('autocompleteModel', model);
-
-                model.on('request', this._setActive, this);
-                model.on('sync', function(){
-                    model.response(model.get('results'));
-                });
-                model.on('error', response([]));
-            }
-
-            target.data('autocompleteModel').response = response;
-            target.data('autocompleteModel').submit(target, request);
-        },
-
-        /**
-         * Store autocomplete key if suggestion was selected.
-         *
-         * @param  jQuery.Event event Selection event
-         * @param  Object       ul    Selected item
-         */
-        _autocompleteSelect: function(event, ui){
-            if(typeof ui.item.key !== 'undefined'){
-                $(event.target).attr('data-autocomplete-key', ui.item.key);
-            }
-        },
-
-        /**
-         * Remove stored autocomplete key when key was pressed.
-         *
-         * @param  jQuery.Event event Keydown event
-         */
-        _autocompleteKeydown: function(event){
-            $(event.target).removeAttr('data-autocomplete-key');
+        _autocompleteSource: function($input) {
+            var url = this.callbackUrl + this.selected + '/autocomplete';
+            var formValues = this._getFormValues($input.closest('form'));
+            var data = {
+                key: $input.attr('name').replace(/^[^[]*\[/, '').replace(/[\]].*$/, ''),
+                value: $input.val(),
+                srs: this.mbMap.model.getCurrentProjectionCode(),
+                extent: this.mbMap.model.getMaxExtentArray(),
+                properties: formValues
+            };
+            return $.getJSON({
+                url: url,
+                data: JSON.stringify(data),
+                method: 'POST'
+            });
         },
 
         /**
@@ -325,15 +257,7 @@
         _autocompleteSearch: function(event, ui,t){
             var input = $(event.target);
             var autoCompleteMenu = $(input.data("uiAutocomplete").menu.element);
-            var delay = input.autocomplete('option', 'delay'),
-                diff = (new Date()) - this.lastSearch;
-
             autoCompleteMenu.addClass("search-router");
-            console.log(autoCompleteMenu.attr("class"));
-
-            if(diff <= delay * this.options.timeoutFactor){
-                event.preventDefault();
-            }
         },
 
         /**
@@ -348,8 +272,30 @@
                 }
             });
 
-            if(valid) {
-                form.submit();
+            if (valid) {
+                var formValues = this._getFormValues(form);
+                var data = {
+                    properties: formValues,
+                    extent: this.mbMap.model.getMaxExtentArray(),
+                    srs: this.mbMap.model.getCurrentProjectionCode()
+                };
+                var url = this.callbackUrl + this.selected + '/search';
+                var self = this;
+                $.getJSON({
+                    url: url,
+                    data: JSON.stringify(data),
+                    method: 'POST'
+                }).then(function(response) {
+                    var features = response.features.map(function(data) {
+                        var gjInput = {
+                            type: 'Feature',
+                            geometry: data.geometry,
+                            properties: data.properties || {}
+                        };
+                        return self.mbMap.model.parseGeoJson(gjInput)[0];
+                    });
+                    self._searchResults(features);
+                });
             }
         },
 
@@ -357,11 +303,12 @@
          * Prepare search result table
          */
         _prepareResultTable: function(container){
-            if(typeof this.options.routes[this.selected].results.headers === 'undefined'){
+            var currentRoute = this.getCurrentRoute();
+            if (!currentRoute || typeof currentRoute.results.headers === 'undefined'){
                 return;
             }
 
-            var headers = this.options.routes[this.selected].results.headers;
+            var headers = currentRoute.results.headers;
 
             var table = $('<table></table>'),
                 thead = $('<thead><tr></tr></thead>').appendTo(table);
@@ -373,32 +320,32 @@
             table.append($('<tbody></tbody>'));
 
             container.append(table);
-
-            this._setupResultCallback();
         },
 
         /**
          * Update result list when search model's results property was changed
          */
-        _searchResults: function(model, results, options){
-            if('table' === this.options.routes[this.selected].results.view) {
+        _searchResults: function(results) {
+            var currentRoute = this.getCurrentRoute();
+            this.removeLastResults();
+            if (currentRoute && 'table' === currentRoute.results.view) {
                 var container = $('.search-results', this.element);
                 if($('table', container).length === 0) {
                     this._prepareResultTable(container);
                 }
-                this._searchResultsTable(model, results, options);
+                this._searchResultsTable(results);
             }
+            this._showResultState(results);
         },
 
         /**
          * Rebuilds result table with search result data.
          *
-         * @param {SearchModel} model
-         * @param {FeatureCollection} results
-         * @param {Object} options Backbone options (not used?)
+         * @param {Array} results
          */
-        _searchResultsTable: function(model, results, options){
-            var headers = this.options.routes[this.selected].results.headers,
+        _searchResultsTable: function(results){
+            var currentRoute = this.getCurrentRoute();
+            var headers = currentRoute.results.headers,
                 table = $('.search-results table', this.element),
                 tbody = $('<tbody></tbody>'),
                 layer = this._getLayer(true),
@@ -410,38 +357,40 @@
 
             if(results.length > 0) $('.no-results', this.element).hide();
 
-            results.each(function(feature, idx) {
+            for (var i = 0; i < results.length; ++i) {
+                var feature = results[i];
                 var row = $('<tr/>');
-                row.addClass(idx % 2 ? "even" : "odd");
+                row.addClass(i % 2 ? "even" : "odd");
                 row.data('feature', feature);
 
                 for (var header in headers) {
-                    var d = feature.get('properties')[header];
+                    var d = feature.data[header];
                     row.append($('<td>' + (d || '') + '</td>'));
                 }
 
                 tbody.append(row);
 
-                features.push(feature.getFeature());
-            });
+                features.push(feature);
+            }
 
             table.append(tbody);
             layer.addFeatures(features);
 
             $('.search-results tbody tr')
                 .on('click', function () {
-                    var feature = $(this).data('feature').getFeature();
+                    var feature = $(this).data('feature');
                     self._highlightFeature(feature, 'select');
+                    self._hideMobile();
                 })
                 .on('mouseenter', function () {
-                    var feature = $(this).data('feature').getFeature();
+                    var feature = $(this).data('feature');
 
                     if(feature.renderIntent !== 'select') {
                         self._highlightFeature(feature, 'temporary');
                     }
                 })
                 .on('mouseleave', function () {
-                    var feature = $(this).data('feature').getFeature();
+                    var feature = $(this).data('feature');
 
                     if(feature.renderIntent !== 'select') {
                         self._highlightFeature(feature, 'default');
@@ -451,10 +400,18 @@
         },
 
         _highlightFeature: function (feature, style) {
-            feature.layer.drawFeature(feature, style);
+            if (style === 'select') {
+                if (this.currentFeature) {
+                    this._highlightFeature(this.currentFeature, 'default');
+                }
+                this.currentFeature = feature;
+            }
+            if (feature.layer) {
+                feature.layer.drawFeature(feature, style);
+            }
         },
 
-        _showResultState: function() {
+        _showResultState: function(results) {
             var widget = this;
             var element = widget.element;
             var table = $('.search-results table', element);
@@ -465,8 +422,6 @@
                   .prependTo($('.search-results', element));
             }
 
-            var results = widget.searchModel.get('results');
-
             if(results.length > 0) {
                 counter.text(Mapbender.trans('mb.core.searchrouter.result_counter', {
                     count: results.length
@@ -476,22 +431,6 @@
                 table.hide();
                 counter.text(Mapbender.trans('mb.core.searchrouter.no_results'));
             }
-        },
-
-        /**
-         * Add active class to widget for styling when Ajax is running
-         */
-        _setActive: function(){
-            var outer = this.options.asDialog ? this.element.parent() : this.element;
-            outer.addClass('search-active');
-        },
-
-        /**
-         * Remove active class from widget
-         */
-        _setInactive: function(){
-            var outer = this.options.asDialog ? this.element.parent() : this.element;
-            outer.removeClass('search-active');
         },
 
         _createStyleMap: function(styles, options) {
@@ -514,21 +453,17 @@
          * @returns object route configuration
          */
         getCurrentRoute: function() {
-            var widget = this;
-            var options = widget.options;
-            return options.routes[widget.selected];
+            return this.selected && this.options.routes[this.selected] || null;
         },
 
         /**
          * Get highlight layer. Will construct one if neccessary.
-         * @TODO: Backbonify (view)
          *
          * @return OpenLayers.Layer.Vector Highlight layer
          */
         _getLayer: function(forceRebuild) {
             var widget = this;
-            var options = widget.options;
-            var map = $('#' + options.target).data('mapbenderMbMap').map.olMap;
+            var map = this.mbMap.map.olMap;
             var layer = widget.highlightLayer;
 
             if(!forceRebuild && layer) {
@@ -554,18 +489,19 @@
          * Set up result callback (zoom on click for example)
          */
         _setupResultCallback: function(){
-            var widget = this;
-            var anchor = $('.search-results', widget.element);
-            if(widget.resultCallbackEvent !== null){
-                anchor.undelegate('tbody tr', widget.resultCallbackEvent,
-                    widget.resultCallbackProxy);
-                widget.resultCallbackEvent = null;
+            var routeNames = Object.keys(this.options.routes);
+            var uniqueEventNames = [];
+            for (var i = 0; i < routeNames.length; ++i) {
+                var routeConfig = this.options.routes[routeNames[i]];
+                var callbackConf = routeConfig.results && routeConfig.results.callback;
+                var routeEventName = callbackConf && callbackConf.event;
+                if (routeEventName && uniqueEventNames.indexOf(routeEventName) === -1) {
+                    uniqueEventNames.push(routeEventName);
+                }
             }
-
-            var event = widget.options.routes[widget.selected].results.callback.event;
-            if(typeof event === 'string'){
-                anchor.delegate('tbody tr', event, widget.resultCallbackProxy);
-                widget.resultCallbackEvent = event;
+            if (uniqueEventNames.length) {
+                var $anchor = $('.search-results', this.element);
+                $anchor.on(uniqueEventNames.join(' '), 'tbody tr', $.proxy(this._resultCallback, this));
             }
         },
 
@@ -574,67 +510,47 @@
          *
          * @param  jQuery.Event event Mouse event
          */
-        _resultCallback: function(event){
-            var widget = this;
-            var options = widget.options;
+        _resultCallback: function(event) {
+            var currentRoute = this.getCurrentRoute();
+            var callbackConf = currentRoute && currentRoute.results && currentRoute.results.callback;
+            if (!callbackConf || event.type !== callbackConf.event) {
+                return;
+            }
             var row = $(event.currentTarget),
-                feature = $.extend({}, row.data('feature').getFeature()),
-                map = feature.layer.map,
-                callbackConf = widget.getCurrentRoute().results.callback,
-                srs = Mapbender.Model.getProj(widget.searchModel.get("srs"));
-            var mapProj = Mapbender.Model.getCurrentProj();
-            if(srs.projCode !== mapProj.projCode) {
-                feature.geometry = feature.geometry.transform(srs, mapProj);
+                feature = row.data('feature')
+            ;
+            var zoomToFeatureOptions;
+            if (callbackConf.options) {
+                zoomToFeatureOptions = {
+                    maxScale: parseInt(callbackConf.options.maxScale) || null,
+                    minScale: parseInt(callbackConf.options.minScale) || null,
+                    buffer: parseInt(callbackConf.options.buffer) || null
+                };
             }
-            var featureExtent = $.extend({},feature.geometry.getBounds());
-
-            // buffer, if needed
-            if(callbackConf.options && callbackConf.options.buffer){
-                var radius = callbackConf.options.buffer;
-                featureExtent.top += radius;
-                featureExtent.right += radius;
-                featureExtent.bottom -= radius;
-                featureExtent.left -= radius;
-            }
-
-            // get zoom for buffered extent
-            var zoom = map.getZoomForExtent(featureExtent);
-
-            // restrict zoom if needed
-            if(callbackConf.options &&
-               (callbackConf.options.maxScale || callbackConf.options.minScale)){
-
-                var res = map.getResolutionForZoom(zoom);
-
-                if(callbackConf.options.maxScale){
-                    var maxRes = OpenLayers.Util.getResolutionFromScale(
-                        callbackConf.options.maxScale, map.baseLayer.units);
-                    if(Math.round(res) < maxRes){
-                        zoom = map.getZoomForResolution(maxRes);
+            this.mbMap.getModel().zoomToFeature(feature, zoomToFeatureOptions);
+        },
+        _onSrsChange: function(event, data) {
+            if (this.highlightLayer) {
+                (this.highlightLayer.features || []).map(function(feature) {
+                    if (feature.geometry && feature.geometry.transform) {
+                        feature.geometry.transform(data.from, data.to);
                     }
-                }
-
-                if(callbackConf.options.minScale){
-                    var minRes = OpenLayers.Util.getResolutionFromScale(
-                        callbackConf.options.minScale, map.baseLayer.units);
-                    if(Math.round(res) > minRes){
-                        zoom = map.getZoomForResolution(minRes);
-                    }
-                }
+                });
+                this.highlightLayer.redraw();
             }
-
-            // finally, zoom
-            map.setCenter(featureExtent.getCenterLonLat(), zoom);
-
-            // And highlight new feature
-            var layer = feature.layer;
-            $.each(layer.selectedFeatures, function(idx, feature) {
-                layer.drawFeature(feature, 'default');
+        },
+        _getFormValues: function(form) {
+            var values = {};
+            _.each($(':input', form), function(input) {
+                var $input = $(input);
+                var name = $input.attr('name').replace(/^[^[]*\[/, '').replace(/[\]].*$/, '');
+                values[name] = $input.val();
             });
+            return values;
+        },
 
-            widget.currentFeature = feature;
-            widget.redraw();
-            layer.selectedFeatures.push(feature);
+        _hideMobile: function() {
+            $('.mobileClose', $(this.element).closest('.mobilePane')).click();
         },
 
         /**

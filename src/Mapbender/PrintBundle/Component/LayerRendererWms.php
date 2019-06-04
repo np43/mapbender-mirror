@@ -25,27 +25,37 @@ class LayerRendererWms extends LayerRenderer
     /** @var ImageTransport */
     protected $imageTransport;
     /** @var int */
-    protected $maxGetMapSize;
+    protected $maxGetMapDimensions;
     /** @var int */
     protected $tileBuffer;
 
     /**
      * @param ImageTransport $imageTransport
      * @param LoggerInterface $logger
-     * @param int $maxGetMapSize
-     * @param int $tileBuffer
+     * @param int[] $maxGetMapDimensions
+     * @param int[] $tileBuffer
      */
-    public function __construct(ImageTransport $imageTransport, LoggerInterface $logger, $maxGetMapSize, $tileBuffer)
+    public function __construct(ImageTransport $imageTransport, LoggerInterface $logger, $maxGetMapDimensions, $tileBuffer)
     {
         $this->imageTransport = $imageTransport;
         $this->logger = $logger;
-        $this->maxGetMapSize = $maxGetMapSize;
-        $this->tileBuffer = $tileBuffer;
-        if ($this->maxGetMapSize < 16) {
-            throw new \InvalidArgumentException("maxGetMapSize {$this->maxGetMapSize} is too small for stable grid splitting maths");
+        if (!is_array($maxGetMapDimensions) || count($maxGetMapDimensions) !== 2) {
+            throw new \InvalidArgumentException("Invalid maxGetMapDimensions type; must be two-item array, got " . print_r($maxGetMapDimensions, true));
         }
-        if ((3 * $this->tileBuffer) >= $this->maxGetMapSize) {
-            throw new \InvalidArgumentException("Tile buffer {$this->tileBuffer} is too large for maxGetMapSize {$this->maxGetMapSize}");
+        if (!is_array($tileBuffer) || count($tileBuffer) !== 2) {
+            throw new \InvalidArgumentException("Invalid tileBuffer type; must be two-item array, got " . print_r($tileBuffer, true));
+        }
+        // force numeric indexing
+        $this->maxGetMapDimensions = array_values($maxGetMapDimensions);
+        $this->tileBuffer = array_values($tileBuffer);
+        foreach ($this->maxGetMapDimensions as $i => $maxGetMapAxis) {
+            if ($maxGetMapAxis < 16) {
+                throw new \InvalidArgumentException("maxGetMapDimensions axis #{$i}: value {$maxGetMapAxis} is too small for stable grid splitting maths");
+            }
+            $tileBufferAxis = $this->tileBuffer[$i];
+            if ((3 * $tileBufferAxis) >= $maxGetMapAxis) {
+                throw new \InvalidArgumentException("Tile buffer axis #{$i}: value {$tileBufferAxis} is too large for GetMap limit {$maxGetMapAxis}");
+            }
         }
     }
 
@@ -127,6 +137,8 @@ class LayerRendererWms extends LayerRenderer
             $layerImage = imagecreatetruecolor($grid->getWidth(), $grid->getHeight());
             imagesavealpha($layerImage, true);
             imagealphablending($layerImage, false);
+            imagefill($layerImage, 0, 0, IMG_COLOR_TRANSPARENT);
+
             foreach ($grid->getTiles() as $tile) {
                 $offsetBox = $tile->getOffsetBox();
                 $tileExtent = $tile->getExtent($extent, $grid->getWidth(), $grid->getHeight());
@@ -170,7 +182,9 @@ class LayerRendererWms extends LayerRenderer
     {
         $params = $this->getBboxAndSizeParams($extent, $canvas->getWidth(), $canvas->getHeight(), !empty($layerDef['changeAxis']));
         $params = $this->adjustParamsForResolution($params, $layerDef, $canvas, $extent);
-        return UrlUtil::validateUrl($layerDef['url'], $params);
+        $url = UrlUtil::validateUrl($layerDef['url'], $params);
+        $symbolParams = $this->getSymbolizationParams($canvas, $url);
+        return UrlUtil::validateUrl($url, $symbolParams);
     }
 
     /**
@@ -214,10 +228,47 @@ class LayerRendererWms extends LayerRenderer
         if ($targetResV != $resolution->getVertical()) {
             $params['HEIGHT'] = intval(max(16, abs($extent->getHeight()) / $targetResV));
         }
-
-        $symbolResolution = max(36, min(576, intval($params['WIDTH'] / $canvas->getWidth() * $canvas->physicalDpi)));
-        $params['map_resolution'] = $symbolResolution;
         return $params;
+    }
+
+    /**
+     * Produces WMS GetMap params for controlling label text and other symbol sizing.
+     *
+     * @param ExportCanvas $canvas
+     * @param string $url
+     * @return string[] array
+     */
+    protected function getSymbolizationParams($canvas, $url)
+    {
+        $existingParams = array();
+        parse_str(parse_url($url, PHP_URL_QUERY), $existingParams);
+
+        $symbolResolution = $this->getSymbolResolution($canvas, $existingParams['WIDTH'], $existingParams['HEIGHT']);
+        return array(
+            // There is no standard param for this, but several vendor specific solutions
+            // 1) Mapserver; not really documented, see https://github.com/mapserver/mapserver/issues/5350
+            'MAP_RESOLUTION' => $symbolResolution,
+            // 2) Geoserver; see https://docs.geoserver.org/latest/en/user/services/wms/vendor.html#format-options
+            'format_options' => "dpi:{$symbolResolution}",
+            // 3) QGis server; see https://docs.qgis.org/2.18/en/docs/user_manual/working_with_ogc/server/services.html#getmap
+            'DPI' => $symbolResolution,
+        );
+    }
+
+    /**
+     * Calculates the dpi value that should be used by the WMS server for calculating text label and other symbol sizes.
+     *
+     * @param ExportCanvas $canvas
+     * @param int $width of the outgoing WMS request that would cover the whole canvas
+     * @param int $height of the outgoing WMS request that would cover the whole canvas
+     * @return int
+     */
+    protected function getSymbolResolution($canvas, $width, $height)
+    {
+        $targetResolution = $width / $canvas->getWidth() * $canvas->physicalDpi;
+        // restrain to semi-sane minimum / maximum values
+        $clamped = max(18, min(576, $targetResolution));
+        return intval($clamped);
     }
 
     /**
@@ -256,7 +307,7 @@ class LayerRendererWms extends LayerRenderer
      */
     protected function getGridOptions($layerDef)
     {
-        return new WmsGridOptions($this->maxGetMapSize, $this->tileBuffer, $this->tileBuffer);
+        return new WmsGridOptions($this->maxGetMapDimensions, $this->tileBuffer);
     }
 
     /**

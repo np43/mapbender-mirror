@@ -1,52 +1,5 @@
 var Mapbender = Mapbender || {};
 /**
- * Simple event dispatcher
- *
- * @author Andriy Oblivantsev <eslider@gmail.com>
- * @copyright 11.08.2014 by WhereGroup GmbH & Co. KG
- */
-Mapbender.Event = {};
-Mapbender.Event.Dispatcher = Class({
-}, {
-    'private object listeners': {},
-    on: function(name, callback) {
-        if (!this.listeners[name]) {
-            this.listeners[name] = [];
-        }
-        this.listeners[name].push(callback);
-        return this;
-    },
-    off: function(name, callback) {
-        if (!this.listeners[name]) {
-            return;
-        }
-        if (callback) {
-            var listeners = this.listeners[name];
-            for (var i in listeners) {
-                if (callback == listeners[i]) {
-                    listeners.splice(i, 1);
-                    return;
-                }
-            }
-        } else {
-            delete this.listeners[name];
-        }
-
-        return this;
-    },
-    dispatch: function(name, data) {
-        if (!this.listeners[name]) {
-            return;
-        }
-
-        var listeners = this.listeners[name];
-        for (var i in listeners) {
-            listeners[i](data);
-        }
-        return this;
-    }
-});
-/**
  * @typedef Model~ExtendedLayerInfo
  * @property {Object} layer
  * @property {Model~LayerState} state
@@ -56,61 +9,40 @@ Mapbender.Event.Dispatcher = Class({
  * Abstract Geo Source Handler
  * @author Paul Schmidt
  */
-Mapbender.Geo = {
-    'layerOrderMap': {}
-};
-Mapbender.Geo.SourceHandler = Class({
-    'extends': Mapbender.Event.Dispatcher
-}, {
-    _layerOrderMap: {},
-    'private string layerNameIdent': 'name',
-    'private object defaultOptions': {},
-    'abstract public function create': function(options) {
-    },
-    'abstract public function featureInfoUrl': function(layer, x, y) {
-    },
-    'abstract public function getPrintConfig': function(layer, bounds, isProxy) {
-    },
-    'public function postCreate': function(olLayer) {
+Mapbender.Geo = {};
 
-    },
-    'public function changeProjection': function(source, projection) {
-    },
-    getLayersList: function getLayersList(source, offsetLayer, includeOffset) {
-        var _source = $.extend(true, {}, source);
-        var rootLayer = _source.configuration.children[0];
-        var layerFound = rootLayer.options.id.toString() === offsetLayer.options.id.toString();
-        var layersOut = [];
-        _findLayers(rootLayer);
-        return {
-            source: _source,
-            layers: layersOut
-        };
-
-        function _findLayers(layer) {
-            if (layer.children) {
-                var i = 0;
-                for (; i < layer.children.length; i++) {
-                    if (layer.children[i].options.id.toString() === offsetLayer.options.id.toString()) {
-                        layerFound = true;
-                    }
-                    if (layerFound) {
-                        var matchOffset = i;
-                        if (!includeOffset) {
-                            matchOffset += 1;
-                        }
-                        var matchLength = layer.children.length - matchOffset;
-                        // splice modifies the original Array => work with a shallow copy
-                        var layersCopy = layer.children.slice();
-                        var matchedLayers = layersCopy.splice(matchOffset, matchLength);
-                        layersOut = layersOut.concat(matchedLayers);
-
-                        break;
-                    }
-                    _findLayers(layer.children[i]);
-                }
-            }
+Mapbender.Geo.SourceHandler = {
+    featureInfoUrl: function(source, x, y) {
+        var source_;
+        if (source.source) {
+            // An actual MapQuery layer
+            console.warn("Deprecated call to featureInfoUrl with a MapQuery layer, pass in the source object instead");
+            source_ = source.source;
+        } else {
+            source_ = source;
         }
+        return source_.getPointFeatureInfoUrl(x, y);
+    },
+    /**
+     * Returns modernish print data.
+     *
+     * @param {*} source
+     * @param {OpenLayers.Bounds} bounds
+     * @param {Number} scale
+     * @param {OpenLayers.Projection} projection
+     * @return {Array<RasterPrintDataRecord>}
+     */
+    getPrintConfigEx: function(source, bounds, scale, projection) {
+        return source.getMultiLayerPrintConfig(bounds, scale, projection);
+    },
+    getLayersList: function getLayersList(source) {
+        if (arguments.length !== 1) {
+            console.warn("Called getLayersList with extra arguments, ignoring");
+        }
+        var rootLayer = source.configuration.children[0];
+        return {
+            layers: (rootLayer.children || [])
+        };
     },
     addLayer: function addLayer(source, layerToAdd, parentLayerToAdd, position) {
         var rootLayer = source.configuration.children[0];
@@ -242,36 +174,7 @@ Mapbender.Geo.SourceHandler = Class({
                 children: $.extend(true, {}, newTreeOptions, changedStates)
             }
         };
-        return $.extend(result, this.getLayerParameters(source, newStates));
-    },
-    getLayerParameters: function getLayerParameters(source, stateMap) {
-        var result = {
-            layers: [],
-            styles: [],
-            infolayers: []
-        };
-        var layerParamName = this.layerNameIdent;
-        var customLayerOrder = Mapbender.Geo.layerOrderMap["" + source.id];
-        Mapbender.Util.SourceTree.iterateSourceLeaves(source, false, function(layer) {
-            // Layer names can be emptyish, most commonly on root layers
-            // Suppress layers with empty names entirely
-            if (layer.options[layerParamName]) {
-                var layerState = stateMap[layer.options.id] || layer.state;
-                if (layerState.visibility) {
-                    result.layers.push(layer.options[layerParamName]);
-                    result.styles.push(layer.options.style || '');
-                }
-                if (layerState.info) {
-                    result.infolayers.push(layer.options[layerParamName]);
-                }
-            }
-        });
-        if (customLayerOrder) {
-            result.layers = _.filter(customLayerOrder, function(layerName) {
-                return result.layers.indexOf(layerName) !== -1;
-            });
-        }
-        return result;
+        return $.extend(result, source.getLayerParameters(newStates));
     },
     /**
      * @param {object} source wms source
@@ -285,8 +188,62 @@ Mapbender.Geo.SourceHandler = Class({
         var self = this;
         var layerChanges = {
         };
-        layerChanges = $.extend(layerChanges, self.createOptionsChangeObject(source.configuration.children[0], changeOptions, defaultSelected, mergeSelected));
 
+        /**
+         * TODO TESTEN erstmal auskommentieren nach Upgrade testen
+         * layerChanges = $.extend(layerChanges, self.createOptionsChangeObject(source.configuration.children[0], changeOptions, defaultSelected, mergeSelected));
+         */
+        function setSelected(layer) {
+            var layerOpts = changeOptions.layers[layer.options.id];
+            var newTreeOptions = {
+                selected: null
+            };
+            var changedTreeOptions;
+            if (layer.children && layer.children.length) {
+                for (var i = 0; i < layer.children.length; i++) {
+                    if (setSelected(layer.children[i])) {
+                        newTreeOptions.selected = true;
+                    }
+                }
+                if (newTreeOptions.selected === null && layerOpts) {
+                    newTreeOptions.selected = layerOpts.options.treeOptions.selected;
+                }
+                if (newTreeOptions.selected === null && defaultSelected !== null) {
+                    newTreeOptions.selected = defaultSelected;
+                }
+            } else {
+                newTreeOptions.selected = layerOpts ? layerOpts.options.treeOptions.selected : defaultSelected;
+            }
+            if (mergeSelected) {
+                newTreeOptions.selected = newTreeOptions.selected || layer.options.treeOptions.selected;
+            }
+            if (newTreeOptions.selected === null) {
+                return null;
+            }
+
+            if (newTreeOptions.selected !== layer.options.treeOptions.selected) {
+                changedTreeOptions = {
+                    selected: newTreeOptions.selected
+                };
+                if (mergeSelected && !newTreeOptions.selected) {
+                    newTreeOptions.info = layer.options.treeOptions.info;
+                } else {
+                    newTreeOptions.info = newTreeOptions.selected;
+                }
+                newTreeOptions.info = newTreeOptions.info && layer.options.treeOptions.allow.info;
+                if (newTreeOptions.info !== layer.options.treeOptions.info) {
+                    changedTreeOptions.info = newTreeOptions.info;
+                }
+            }
+            if (changedTreeOptions) {
+                layerChanges[layer.options.id] = {
+                    options: {
+                        treeOptions: changedTreeOptions
+                    }
+                };
+            }
+            return newTreeOptions.selected;
+        }
         var changed = {
             sourceIdx: {
                 id: source.id
@@ -369,23 +326,8 @@ Mapbender.Geo.SourceHandler = Class({
      * @param {string} layerId
      * @returns {Object.<string,Array.<float>>} mapping of EPSG code to BBOX coordinate pair
      */
-    getLayerExtents: function getLayerExtents(source, layerId) {
-        var extents = null;
-        Mapbender.Util.SourceTree.iterateLayers(source, false, function(layerDef) {
-            if (layerDef.options.id === layerId) {
-                extents = layerDef.options.bbox || null;
-                // abort iteration
-                return false;
-            }
-        });
-
-        if (extents && Object.keys(extents).length) {
-            return extents;
-        }
-        if (source.configuration.options.bbox && Object.keys(source.configuration.options.bbox).length) {
-            return source.configuration.options.bbox;
-        }
-        return null;
+    getLayerExtents: function (source, layerId) {
+        return source.getLayerExtentConfigMap(layerId, true, true);
     },
     /**
      * Returns a preview mapping of states of displayable (=leaf) layers as if the given scale + extent were applied
@@ -399,7 +341,8 @@ Mapbender.Geo.SourceHandler = Class({
     getExtendedLeafInfo: function(source, scale, extent) {
         var infoMap = {};
         var self = this;
-        var customLayerOrder = Mapbender.Geo.layerOrderMap["" + source.id];
+
+        var order = 0;
         Mapbender.Util.SourceTree.iterateSourceLeaves(source, false, function(layer, offset, parents) {
             var layerId = layer.options.id;
             var outOfScale = !self.isLayerInScale(layer, scale);
@@ -414,10 +357,6 @@ Mapbender.Geo.SourceHandler = Class({
             // @todo TBD: disable featureInfo if layer visual is disabled?
             // featureInfo = featureInfo && enabled
             var visibility = enabled && !(outOfScale || outOfBounds);
-            var order = (customLayerOrder || []).indexOf(layer.options.name);
-            if (order === -1) {
-                order = null;
-            }
             infoMap[layerId] = {
                 layer: layer,
                 state: {
@@ -429,6 +368,7 @@ Mapbender.Geo.SourceHandler = Class({
                 order: order,
                 parents: parents
             };
+            ++order;
         });
         return infoMap;
     },
@@ -490,7 +430,10 @@ Mapbender.Geo.SourceHandler = Class({
                 parentLayer.state.visibility = parentLayer.state.visibility || layer.state.visibility;
                 if (stateChanged) {
                     changeMap[parentId] = $.extend(changeMap[parentId] || {}, {
-                        state: parentLayer.state
+                        state: parentLayer.state,
+                        options: {
+                            treeOptions: parentLayer.options.treeOptions
+                        }
                     });
                 }
             }
@@ -507,25 +450,79 @@ Mapbender.Geo.SourceHandler = Class({
         return Mapbender.Util.isInScale(scale_, layer.options.minScale, layer.options.maxScale);
     },
     /**
-     * @todo: Implement this. Requires detection of applicable SRS, lookup in bbox list by SRS and potentially
-     *        retransformation.
-     *
      * @param {Object} layer
      * @param {*} extent
      * @return {boolean}
      */
     isLayerWithinBounds: function(layer, extent) {
-        // HACK: out of bounds calculation broken since introduction of SRS switcher
+        // HACK: disabled for now
+        // WHen switching SRS this gets called multiple times, sometimes with an extent in the old SRS,
+        // which effectively disables perfectly viable layers.
         return true;
+        var projectionCode = Mapbender.Model.getCurrentProjectionCode();
+        // let the source substitute the layer (c.f. WMTS fake root layer for layertree)
+        var bounds = layer.source && layer.source.getLayerBounds(layer.options.id, projectionCode, true);
+        if (layer.source && layer === layer.source.configuration.children[0]) {
+            console.warn("Checking root layer in bounds", extent_, projectionCode);
+        }
+        if (!bounds) {
+            if (bounds === null) {
+                // layer is world wide
+                return true;
+            } else {
+                // layer is kaputt
+                return false;
+            }
+        }
+        var extent_ = extent || Mapbender.Model.getCurrentExtent();
+        return extent_.intersectsBounds(bounds);
     },
     setLayerOrder: function setLayerOrder(source, layerIdOrder) {
-        var newLayerNameOrder = $.map(layerIdOrder, function(layerId) {
-            var layerObj = this.findLayer(source, {id: layerId});
-            return layerObj.layer.options.name;
-        }.bind(this));
-        Mapbender.Geo.layerOrderMap["" + source.id] = newLayerNameOrder;
+        var listsSorted = [];
+        var _pickChildId = function(ids, layer) {
+            if (!ids.length) {
+                return null;
+            } else {
+                var ix = ids.indexOf(layer.options.id);
+                if (ix !== -1) {
+                    return ids[ix];
+                }
+            }
+            if (layer.children && layer.children.length) {
+                for (var ci = 0; ci < layer.children.length; ++ci) {
+                    var ch = _pickChildId(ids, layer.children[ci]);
+                    if (ch !== null) {
+                        return ch;
+                    }
+                }
+            }
+            return null;
+        };
+        var _siblingSort = function(a, b) {
+            var ixA = layerIdOrder.indexOf(_pickChildId(layerIdOrder, a));
+            var ixB = layerIdOrder.indexOf(_pickChildId(layerIdOrder, b));
+            return ixA - ixB;
+        };
+        var parentIdOrder = [];
+        for (var idIx = 0; idIx < layerIdOrder.length; ++idIx) {
+            var layerId = layerIdOrder[idIx];
+            var layerObj = source.getLayerById(layerId);
+            if (listsSorted.indexOf(layerObj.siblings) === -1) {
+                layerObj.siblings.sort(_siblingSort);
+                listsSorted.push(layerObj.siblings);
+            }
+            if (layerObj.parent) {
+                var parentId = layerObj.parent.options.id;
+                if (parentId && parentIdOrder.indexOf(parentId) === -1) {
+                    parentIdOrder.push(parentId);
+                }
+            }
+        }
+        if (parentIdOrder.length) {
+            this.setLayerOrder(source, parentIdOrder);
+        }
     }
-});
+};
 
 // old declaration
 Mapbender['source'] = {};

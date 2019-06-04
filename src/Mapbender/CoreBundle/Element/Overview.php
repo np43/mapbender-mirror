@@ -51,9 +51,9 @@ class Overview extends Element
             'width' => 200,
             'height' => 100,
             'anchor' => 'right-top',
-            'position' => array('0px', '0px'),
             'maximized' => true,
-            'fixed' => true);
+            'fixed' => false,
+        );
     }
 
     /**
@@ -97,19 +97,22 @@ class Overview extends Element
         );
     }
 
+    public function getFrontendTemplatePath($suffix = '.html.twig')
+    {
+        return 'MapbenderCoreBundle:Element:overview.html.twig';
+    }
+
     /**
      * @inheritdoc
      */
     public function render()
     {
         return $this->container->get('templating')->render(
-            'MapbenderCoreBundle:Element:overview.html.twig',
-            array(
+            $this->getFrontendTemplatePath(), array(
                 'id' => $this->getId(),
                 "title" => $this->getTitle(),
-                'configuration' => $this->getConfiguration()
-            )
-        );
+                'configuration' => $this->getConfiguration(),
+        ));
     }
 
     /**

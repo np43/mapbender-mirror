@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityRepository;
 use Mapbender\CoreBundle\Component\Application;
 use Mapbender\CoreBundle\Component\ApplicationYAMLMapper;
 use Mapbender\CoreBundle\Component\Element;
+use Mapbender\CoreBundle\Component\ElementInventoryService;
 use Mapbender\CoreBundle\Component\MapbenderBundle;
 use Mapbender\CoreBundle\Component\Template;
 use Mapbender\CoreBundle\Component\UploadsManager;
@@ -36,9 +37,6 @@ class Mapbender
     /** @var ContainerInterface */
     private $container;
 
-    /** @var Element[] */
-    private $elements = array();
-
     /** @var Template[] */
     private $templates = array();
 
@@ -66,8 +64,6 @@ class Mapbender
             if (!is_subclass_of($bundle, 'Mapbender\CoreBundle\Component\MapbenderBundle')) {
                 continue;
             }
-
-            $this->elements           = array_merge($this->elements, $bundle->getElements());
             $this->templates          = array_merge($this->templates, $bundle->getTemplates());
             $this->repositoryManagers = array_merge($this->repositoryManagers, $bundle->getRepositoryManagers());
         }
@@ -83,7 +79,9 @@ class Mapbender
      */
     public function getElements()
     {
-        return $this->elements;
+        /** @var ElementInventoryService $inventoryService */
+        $inventoryService = $this->container->get('mapbender.element_inventory.service');
+        return $inventoryService->getActiveInventory();
     }
 
     /**
@@ -94,19 +92,6 @@ class Mapbender
     public function getRepositoryManagers()
     {
         return $this->repositoryManagers;
-    }
-
-    /**
-     * Get an empty array.
-     *
-     * @return array
-     * @internal
-     * @deprecated to be removed in 3.0.8
-     *   Return value is always empty, method is not called from anywhere
-     */
-    public function getLayers()
-    {
-        return array();
     }
 
     /**

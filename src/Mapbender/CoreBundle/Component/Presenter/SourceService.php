@@ -2,7 +2,9 @@
 
 namespace Mapbender\CoreBundle\Component\Presenter;
 
+use Mapbender\CoreBundle\Component\Source\TypeDirectoryService;
 use Mapbender\CoreBundle\Component\Source\UrlProcessor;
+use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Entity\Source;
 use Mapbender\CoreBundle\Entity\SourceInstance;
 use Mapbender\CoreBundle\Utils\ArrayUtil;
@@ -114,8 +116,7 @@ abstract class SourceService
             // @todo: Figure out why null. This is never checked. Won't this just cause errors elsewhere?
             return null;
         }
-        $status = $sourceInstance->getSource()->getStatus();
-        $configuration['status'] = $status && $status === Source::STATUS_UNREACHABLE ? 'error' : 'ok';
+        $configuration['status'] = 'ok';    // for initial layertree visual; 'error' can only be produced client-side
         return $configuration;
     }
 
@@ -155,4 +156,14 @@ abstract class SourceService
     public function initializeInstance(SourceInstance $sourceInstance)
     {
     }
+
+    /**
+     * Must return list of assets of given type required for source instances to work on the client.
+     * @see TypeDirectoryService::getAssets()
+     *
+     * @param Application $application
+     * @param string $type must be 'js' or 'trans'
+     * @return string[]
+     */
+    abstract public function getAssets(Application $application, $type);
 }

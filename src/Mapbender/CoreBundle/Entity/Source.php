@@ -10,7 +10,6 @@ use Mapbender\CoreBundle\Component\Utils;
  * @author Paul Schmidt
  *
  * @ORM\Entity
- * @ UniqueEntity("uuid")
  * @ORM\Table(name="mb_core_source")
  * @ORM\InheritanceType("JOINED")
  * @ORM\DiscriminatorColumn(name="discr", type="string")
@@ -19,7 +18,9 @@ use Mapbender\CoreBundle\Component\Utils;
 abstract class Source
 {
 
+    /** @deprecated only relevant client-side, and it doesn't even use the same string values there */
     const STATUS_OK = 'OK';
+    /** @deprecated only relevant client-side, and it doesn't even use the same string values there */
     const STATUS_UNREACHABLE = 'UNREACHABLE';
 
     const TYPE_WMS = "WMS";
@@ -33,13 +34,6 @@ abstract class Source
      * @ORM\GeneratedValue(strategy="AUTO")
      */
     protected $id;
-
-    /**
-     * @var string $uuid The unic id
-     * @ORM\Column(type="string", nullable=true)
-     * @ ORM\Column(type="string", length=36, nullable=false, unique=true)
-     */
-    protected $uuid;
 
     /**
      * @var string $title The source title
@@ -66,12 +60,6 @@ abstract class Source
     protected $description;
 
     /**
-     * @var string source status
-     * @ORM\Column(type="string", length=25, nullable=true)
-     */
-    protected $status = self::STATUS_OK;
-
-    /**
      * @ORM\Column(type="string",nullable=true)
      */
     protected $type;
@@ -88,7 +76,6 @@ abstract class Source
     public function __construct($type)
     {
         $this->type = $type;
-        $this->uuid = Utils::guidv4();
     }
 
     /**
@@ -110,27 +97,6 @@ abstract class Source
     public function getId()
     {
         return $this->id;
-    }
-
-    /**
-     * Get uuid
-     *
-     * @return string
-     */
-    public function getUuid()
-    {
-        return $this->uuid;
-    }
-
-    /**
-     * Set uuid
-     *
-     * @return Source
-     */
-    public function generateUuid()
-    {
-        $this->uuid = Utils::guidv4();
-        return $this;
     }
 
     /**
@@ -236,34 +202,23 @@ abstract class Source
     }
 
     /**
-     * Set status
-     *
-     * @param string $status
-     * @return Source
-     */
-    public function setStatus($status)
-    {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    /**
-     * Get status
+     * Source status is a client-side runtime concept helping to visualize live network response errors.
+     * It's meaningless server-side.
      *
      * @return string
+     * @deprecated
      */
-    public function getStatus()
+    final public function getStatus()
     {
-        return $this->status;
+        return self::STATUS_OK;
     }
-    
+
     /**
      * Returns the source identifier
      * @return string source indetifier
      */
     abstract public function getIdentifier();
-    
+
     /**
      * Sets  the source identifier
      * @param string $identifier the source identifier

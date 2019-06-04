@@ -18,9 +18,7 @@
          * Creates the map widget
          */
         _create: function(){
-            OpenLayers.ProxyHost = Mapbender.configuration.application.urls.proxy + '?url=';
-            var self = this,
-                    me = $(this.element);
+            var self = this;
             this.elementUrl = Mapbender.configuration.application.urls.element + '/' + this.element.attr('id') + '/';
             this.model = Mapbender.Model;
             this.model.init(this);
@@ -28,7 +26,7 @@
                 layerDefs: [],
                 poiIcon: this.options.poiIcon
             });
-            this.map = me.data('mapQuery');
+            this.map = this.model.map;
             self._trigger('ready');
         },
         getMapState: function(){
@@ -89,45 +87,48 @@
         getModel: function(){
             return this.model;
         },
+        /**
+         * Emulation shim for old-style MapQuery.Map.prototype.center.
+         * See https://github.com/mapbender/mapquery/blob/1.0.2/src/jquery.mapquery.core.js#L298
+         * @param {Object} options
+         * @deprecated
+         */
         setCenter: function(options){
-            if(typeof options.box !== 'undefined' && typeof options.position !== 'undefined' && typeof options.zoom !== 'undefined')
-                this.map.center(options);
-            else if(typeof options.center !== 'undefined' && typeof options.zoom !== 'undefined') {
-                this.map.olMap.updateSize();
-                this.map.olMap.setCenter(options.center, options.zoom);
-            }
+            this.getModel().setCenterMapqueryish(options);
         },
         /*
          * Changes the map's projection.
          */
-        changeProjection: function(srs){
-            if(typeof srs === "string")
-                this.model.changeProjection({
-                    projection: this.model.getProj(
-                            srs)
-                });
-            else
-                this.model.changeProjection({
-                    projection: srs
-                });
+        changeProjection: function(srs) {
+            if (typeof srs === "string") {
+                this.model.changeProjection(srs);
+            } else {
+                // legacy stuff
+                var projCode = srs.projCode || (srs.proj && srs.proj.srsCode);
+                if (!projCode) {
+                    console.error("Invalid srs argument", srs);
+                    throw new Error("Invalid srs argument");
+                }
+                this.model.changeProjection(projCode);
+            }
         },
         /**
          * Zooms the map in
          */
-        zoomIn: function(){
-            this.map.olMap.zoomIn();
+        zoomIn: function() {
+            this.model.zoomIn();
         },
         /**
          * Zooms the map out
          */
-        zoomOut: function(){
-            this.map.olMap.zoomOut();
+        zoomOut: function() {
+            this.model.zoomOut();
         },
         /**
          * Zooms the map to max extent
          */
-        zoomToFullExtent: function(){
-            this.map.olMap.zoomToMaxExtent();
+        zoomToFullExtent: function() {
+            this.model.zoomToFullExtent();
         },
         /**
          * Zooms the map to extent
@@ -139,11 +140,26 @@
         },
         /**
          * Zooms the map to scale
+         * @deprecated
          */
-        zoomToScale: function(scale, closest){
-            if(typeof closest === 'undefined')
-                closest = false;
-            this.map.olMap.zoomToScale(scale, closest);
+        zoomToScale: function(scale, closest) {
+            console.warn("Deprecated zoomToScale call, use engine-independent Model.pickZoomForScale + Model.setZoomLevel");
+            this.map.olMap.zoomToScale.apply(this.map.olMap, arguments);
+        },
+        /**
+         * Super legacy, some variants of wmcstorage want to use this to replace the map's initial max extent AND
+         * initial SRS, which only really works when called immediately before an SRS switch. Very unsafe to use.
+         * @deprecated
+         */
+        setMaxExtent: function(newMaxExtent, newMaxExtentSrs) {
+            this.getModel().replaceInitialMaxExtent(newMaxExtent, newMaxExtentSrs);
+        },
+        /**
+         * Super legacy, never really did anything, only stored the argument in a (long gone) property of the Model
+         * @deprecated
+         */
+        setExtent: function() {
+            console.error("mbMap.setExtent called, doesn't do anything, you probably want to call zoomToExtent instead", arguments);
         },
         /**
          * Adds the popup
@@ -195,9 +211,8 @@
          * Loads the srs definitions from server
          */
         loadSrs: function(srslist){
-            var self = this;
             $.ajax({
-                url: self.elementUrl + 'loadsrs',
+                url: this.elementUrl + 'loadsrs',
                 type: 'POST',
                 data: {
                     srs: srslist

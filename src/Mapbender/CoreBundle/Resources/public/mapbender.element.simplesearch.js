@@ -3,6 +3,20 @@
 $.widget('mapbender.mbSimpleSearch', {
     options: {
         url: null,
+        /** one of 'WKT', 'GeoJSON' */
+        token_regex: null,
+        token_regex_in: null,
+        token_regex_out: null,
+        label_attribute: null,
+        geom_attribute: null,
+        geom_format: null,
+        result: {
+            buffer: null,
+            minscale: null,
+            maxscale: null,
+            icon_url: null,
+            icon_offset: null
+        },
         delay: 0
     },
 
@@ -33,98 +47,82 @@ $.widget('mapbender.mbSimpleSearch', {
         });
 
         // On item selection in autocomplete, parse data and set map bbox
+        searchInput.on('mbautocomplete.selected', $.proxy(this._onAutocompleteSelected, this));
+    },
+    _getMbMap: function() {
+        // @todo: SimpleSearch should have a 'target' for this, like virtually every other element
+        return (Mapbender.elementRegistry.listWidgets())['mapbenderMbMap'];
+    },
+    _onAutocompleteSelected: function(evt, evtData) {
         var format = new OpenLayers.Format[this.options.geom_format]();
-        searchInput.on('mbautocomplete.selected', function(evt, evtData) {
+        if(!evtData.data[this.options.geom_attribute]) {
+            $.notify( Mapbender.trans("mb.core.simplesearch.error.geometry.missing"));
+            return;
+        }
 
-            if(!evtData.data[self.options.geom_attribute]) {
-                $.notify( Mapbender.trans("mb.core.simplesearch.error.geometry.missing"));
-                return;
+        var feature = format.read(evtData.data[this.options.geom_attribute]);
+        var mbMap = this._getMbMap();
+
+        var zoomToFeatureOptions = this.options.result && {
+            maxScale: parseInt(this.options.result.maxscale) || null,
+            minScale: parseInt(this.options.result.minscale) || null,
+            buffer: parseInt(this.options.result.buffer) || null
+        };
+        mbMap.getModel().zoomToFeature(feature, zoomToFeatureOptions);
+        this._hideMobile();
+        this._setFeatureMarker(feature);
+    },
+    _setFeatureMarker: function(feature) {
+        var olMap = this._getMbMap().getModel().map.olMap;
+        var self = this;
+
+        var bounds = feature.geometry.getBounds();
+
+        // Add marker
+        if(self.options.result.icon_url) {
+            if(!self.marker) {
+                var addMarker = function() {
+                    var offset = (self.options.result.icon_offset || '').split(new RegExp('[, ;]'));
+                    var x = parseInt(offset[0]);
+
+                    var size = {
+                        'w': image.naturalWidth,
+                        'h': image.naturalHeight
+                    };
+
+                    var y = parseInt(offset[1]);
+
+                    offset = {
+                        'x': !isNaN(x) ? x : 0,
+                        'y': !isNaN(y) ? y : 0
+                    };
+
+                    var icon = new OpenLayers.Icon(image.src, size, offset);
+                    self.marker = new OpenLayers.Marker(bounds.getCenterLonLat(), icon);
+                    self.layer = new OpenLayers.Layer.Markers();
+                    olMap.addLayer(self.layer);
+                    self.layer.addMarker(self.marker);
+                };
+
+                var image = new Image();
+                image.src = self.options.result.icon_url;
+                image.onload = addMarker;
+                image.onerror = addMarker;
+            } else {
+                var newPx = olMap.getLayerPxFromLonLat(bounds.getCenterLonLat());
+                self.marker.moveTo(newPx);
             }
+        }
+    },
 
-            var feature = format.read(evtData.data[self.options.geom_attribute]);
-            var olMap = Mapbender.Model.map.olMap;
-            var bounds = feature.geometry.getBounds();
-
-            if(self.options.result.buffer > 0) {
-                bounds.top += self.options.result.buffer;
-                bounds.right += self.options.result.buffer;
-                bounds.bottom -= self.options.result.buffer;
-                bounds.left -= self.options.result.buffer;
-            }
-
-            var zoom = olMap.getZoomForExtent(bounds);
-
-            // restrict zoom if needed
-            if(self.options.result && (self.options.result.maxscale || self.options.result.minscale)){
-                var res = olMap.getResolutionForZoom(zoom);
-                var units = olMap.baseLayer.units;
-                var scale = OpenLayers.Util.getScaleFromResolution(res, units);
-
-                if(self.options.result.maxscale) {
-                    var maxRes = OpenLayers.Util.getResolutionFromScale(
-                        self.options.result.maxscale, olMap.baseLayer.units);
-                    if(Math.round(res) < maxRes) {
-                        zoom = olMap.getZoomForResolution(maxRes);
-                    }
-                }
-
-                if(self.options.result.minscale) {
-                    var minRes = OpenLayers.Util.getResolutionFromScale(
-                        self.options.result.minscale, olMap.baseLayer.units);
-                    if(Math.round(res) > minRes) {
-                        zoom = olMap.getZoomForResolution(minRes);
-                    }
-                }
-            }
-
-            // Add marker
-            if(self.options.result.icon_url) {
-                if(!self.marker) {
-                    var addMarker = function() {
-                        var offset = (self.options.result.icon_offset || '').split(new RegExp('[, ;]'));
-                        var x = parseInt(offset[0]);
-
-                        var size = {
-                            'w': image.naturalWidth,
-                            'h': image.naturalHeight
-                        };
-
-                        var y = parseInt(offset[1]);
-
-                        offset = {
-                            'x': !isNaN(x) ? x : 0,
-                            'y': !isNaN(y) ? y : 0
-                        };
-
-                        var icon = new OpenLayers.Icon(image.src, size, offset);
-                        self.marker = new OpenLayers.Marker(bounds.getCenterLonLat(), icon);
-                        self.layer = new OpenLayers.Layer.Markers();
-                        olMap.addLayer(self.layer);
-                        self.layer.addMarker(self.marker);
-                    }
-
-                    var image = new Image();
-                    image.src = self.options.result.icon_url;
-                    image.onload = addMarker;
-                    image.onerror = addMarker;
-                } else {
-                    var newPx = olMap.getLayerPxFromLonLat(bounds.getCenterLonLat());
-                    self.marker.moveTo(newPx);
-                }
-            }
-
-            // finally, zoom
-            Mapbender.Model.center({
-                position: [bounds.getCenterLonLat().lon, bounds.getCenterLonLat().lat],
-                zoom: zoom
-            });
-        });
+    _hideMobile: function() {
+        $('.mobileClose', $(this.element).closest('.mobilePane')).click();
     },
 
     _tokenize: function(string) {
-        if('' == this.options.token_regex_in || '' == this.options.token_regex_out) return string;
+        if (!(this.options.token_regex_in && this.options.token_regex_out)) return string;
 
-        if (this.options.token_regex != "") {
+        if (this.options.token_regex) {
             var regexp = new RegExp(this.options.token_regex, 'g');
             string = string.replace(regexp, " ");
         }

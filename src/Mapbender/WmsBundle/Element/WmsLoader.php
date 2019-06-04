@@ -2,13 +2,18 @@
 
 namespace Mapbender\WmsBundle\Element;
 
+use Doctrine\ORM\EntityRepository;
 use Mapbender\CoreBundle\Component\Element;
 use Mapbender\CoreBundle\Component\Source\TypeDirectoryService;
+use Mapbender\CoreBundle\Entity\SourceInstance;
 use Mapbender\WmsBundle\Component\Wms\Importer;
 use Mapbender\WmsBundle\Component\WmsSourceEntityHandler;
 use Mapbender\WmsBundle\Entity\WmsOrigin;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Security\Acl\Domain\ObjectIdentity;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * WmsLoader
@@ -73,9 +78,12 @@ class WmsLoader extends Element
     public function getConfiguration()
     {
         $configuration = parent::getConfiguration();
-        if ($this->container->get('request_stack')->getCurrentRequest()->get('wms_url')) {
-            $wms_url = $this->container->get('request_stack')->getCurrentRequest()->get('wms_url');
-            $all = $this->container->get('request_stack')->getCurrentRequest()->query->all();
+
+        /** @var Request $request */
+        $request = $this->container->get('request_stack')->getCurrentRequest();
+        if ($request->get('wms_url')) {
+            $wms_url = $request->get('wms_url');
+            $all = $request->query->all();
             foreach ($all as $key => $value) {
                 if (strtolower($key) === "version" && stripos($wms_url, "version") === false) {
                     $wms_url .= "&version=" . $value;
@@ -87,8 +95,8 @@ class WmsLoader extends Element
             }
             $configuration['wms_url'] = urldecode($wms_url);
         }
-        if ($this->container->get('request_stack')->getCurrentRequest()->get('wms_id')) {
-            $wmsId = $this->container->get('request_stack')->getCurrentRequest()->get('wms_id');
+        if ($request->get('wms_id')) {
+            $wmsId = $request->get('wms_id');
             $configuration['wms_id'] = $wmsId;
         }
         return $configuration;
@@ -110,6 +118,7 @@ class WmsLoader extends Element
                 'MapbenderWmsBundle:Element:wmsloader.json.twig',
             ),
         );
+        $config = $this->entity->getConfiguration();
         if (!empty($config['useDeclarative'])) {
             $assetRefs['js'][] = '@MapbenderCoreBundle/Resources/public/mapbender.distpatcher.js';
         }
@@ -132,52 +141,72 @@ class WmsLoader extends Element
         return 'MapbenderWmsBundle:ElementAdmin:wmsloader.html.twig';
     }
 
+    public function getFrontendTemplatePath($suffix = '.html.twig')
+    {
+        return 'MapbenderWmsBundle:Element:wmsloader.html.twig';
+    }
+
     /**
      * @inheritdoc
      */
     public function render()
     {
         return $this->container->get('templating')
-            ->render('MapbenderWmsBundle:Element:wmsloader.html.twig', array(
+            ->render($this->getFrontendTemplatePath(), array(
                 'id' => $this->getId(),
                 "title" => $this->getTitle(),
                 'example_url' => $this->container->getParameter('wmsloader.example_url'),
-                'configuration' => $this->getConfiguration()));
+                'configuration' => $this->getConfiguration(),
+        ));
     }
 
     /**
      * @inheritdoc
      */
-    public function httpAction($action)
+    public function handleHttpRequest(Request $request)
     {
+        $action = $request->attributes->get('action');
         switch ($action) {
+            case 'getInstances':
+                $instanceIds = array_filter(explode(',', $request->get('instances', '')));
+                return new JsonResponse(array(
+                    'success' => $this->getDatabaseInstanceConfigs($instanceIds),
+                ));
             case 'loadWms':
-                return $this->loadWms();
+                return $this->loadWms($request);
             default:
-                throw new NotFoundHttpException('No such action');
+                throw new NotFoundHttpException("Unknown action {$action}");
         }
     }
 
-    protected function loadWms()
+    protected function loadWms(Request $request)
     {
-        $request = $this->container->get('request_stack')->getCurrentRequest();
         $wmsSource = $this->getWmsSource($request);
 
         $wmsSourceEntityHandler = new WmsSourceEntityHandler($this->container, $wmsSource);
         $wmsInstance = $wmsSourceEntityHandler->createInstance();
-        /** @var TypeDirectoryService $directory */
-        $directory = $this->container->get('mapbender.source.typedirectory.service');
-        $layerConfiguration = $directory->getSourceService($wmsInstance)->getConfiguration($wmsInstance);
-        $elementConfig = $this->getConfiguration();
-        if ($elementConfig['splitLayers']) {
+        $sourceService = $this->getSourceService($wmsInstance);
+        $layerConfiguration = $sourceService->getConfiguration($wmsInstance);
+        $config = array_replace($this->getDefaultConfiguration(), $this->entity->getConfiguration());
+        if ($config['splitLayers']) {
             $layerConfigurations = $this->splitLayers($layerConfiguration);
         } else {
             $layerConfigurations = [$layerConfiguration];
+        }
+        // amend info_format and format options
+        foreach ($layerConfigurations as &$layerConfiguration) {
+            $layerConfiguration['configuration']['options']['info_format'] = $config['defaultInfoFormat'];
+            $layerConfiguration['configuration']['options']['format'] = $config['defaultFormat'];
         }
 
         return new JsonResponse($layerConfigurations);
     }
 
+    /**
+     * @param Request $request
+     * @return \Mapbender\WmsBundle\Entity\WmsSource
+     * @throws \Mapbender\CoreBundle\Component\Exception\XmlParseException
+     */
     protected function getWmsSource($request)
     {
         $requestUrl = $request->get("url");
@@ -207,5 +236,38 @@ class WmsLoader extends Element
             $layerConfigurations[] = $layerConfiguration;
         }
         return $layerConfigurations;
+    }
+
+    /**
+     * @param string[] $instanceIds
+     * @return array
+     */
+    protected function getDatabaseInstanceConfigs(array $instanceIds)
+    {
+        /** @var AuthorizationCheckerInterface $suthorizationChecker */
+        $suthorizationChecker = $this->container->get('security.authorization_checker');
+        /** @var EntityRepository $repository */
+        $repository = $this->container->get('doctrine')->getRepository('MapbenderCoreBundle:SourceInstance');
+        $instanceConfigs = array();
+        $sourceOid = new ObjectIdentity('class', 'Mapbender\CoreBundle\Entity\Source');
+        foreach ($instanceIds as $instanceId) {
+            /** @var SourceInstance $instance */
+            $instance = $repository->find($instanceId);
+            if ($instance && $suthorizationChecker->isGranted('VIEW', $sourceOid)) {
+                $instanceConfigs[] = $this->getSourceService($instance)->getConfiguration($instance);
+            }
+        }
+        return $instanceConfigs;
+    }
+
+    /**
+     * @param SourceInstance $instance
+     * @return \Mapbender\CoreBundle\Component\Presenter\SourceService|null
+     */
+    protected function getSourceService($instance)
+    {
+        /** @var TypeDirectoryService $directory */
+        $directory = $this->container->get('mapbender.source.typedirectory.service');
+        return $directory->getSourceService($instance);
     }
 }

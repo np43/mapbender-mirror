@@ -11,35 +11,27 @@ use Mapbender\CoreBundle\Component\Template;
  */
 class ManagerTemplate extends Template
 {
-    public function getAssets($type)
-    {
-        switch ($type) {
-            case 'js':
-                return array(
-                    '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
-                    '/components/vis-ui.js/vis-ui.js-built.js',
+    protected static $css = array(
+        '@MapbenderManagerBundle/Resources/public/sass/manager/applications.scss',
+    );
 
-                    '@MapbenderManagerBundle/Resources/public/js/SymfonyAjaxManager.js',
+    protected static $js = array(
+        '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
+        '/components/vis-ui.js/vis-ui.js-built.js',
 
-                    '@FOMCoreBundle/Resources/public/js/widgets/dropdown.js',
-                    '@FOMCoreBundle/Resources/public/js/widgets/checkbox.js',
-                    '@FOMCoreBundle/Resources/public/js/widgets/radiobuttonExtended.js',
-                    '@FOMCoreBundle/Resources/public/js/components.js',
-                    '@FOMCoreBundle/Resources/public/js/widgets/collection.js',
-                    '@MapbenderCoreBundle/Resources/public/mapbender.trans.js',
-                );
-            case 'css':
-                return array(
-                    '@MapbenderManagerBundle/Resources/public/sass/manager/applications.scss',
-                );
-            case 'trans':
-                return array(
-                    '@MapbenderManagerBundle/Resources/views/translations.json.twig'
-                );
-            default:
-                throw new \InvalidArgumentException("Unsupported asset type " . print_r($type, true));
-        }
-    }
+        // '@MapbenderManagerBundle/Resources/public/js/SymfonyAjaxManager.js',
+
+        '@FOMCoreBundle/Resources/public/js/widgets/dropdown.js',
+        '@FOMCoreBundle/Resources/public/js/widgets/checkbox.js',
+        '@FOMCoreBundle/Resources/public/js/widgets/radiobuttonExtended.js',
+        '@FOMCoreBundle/Resources/public/js/components.js',
+        '@FOMCoreBundle/Resources/public/js/widgets/collection.js',
+        '@MapbenderCoreBundle/Resources/public/mapbender.trans.js',
+    );
+
+    protected static $translations = array(
+        '@MapbenderManagerBundle/Resources/views/translations.json.twig'
+    );
 
     /**
      * @inheritdoc

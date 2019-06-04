@@ -1,6 +1,6 @@
 (function($){
 
-    $.widget("mapbender.mbRedlining", {
+    $.widget("mapbender.mbRedlining", $.mapbender.mbBaseElement, {
         options: {
             target: null,
             display_type: 'dialog',
@@ -13,27 +13,36 @@
                 'strokeWidth': '3'
             }
         },
+        mbMap: null,
         map: null,
         layer: null,
         activeControl: null,
         geomCounter: 0,
         rowTemplate: null,
-        _create: function(){
-            if(!Mapbender.checkTarget("mbRedlining", this.options.target)) {
-                return;
-            }
+        _create: function() {
             var self = this;
-            this.elementUrl = Mapbender.configuration.application.urls.element + '/' + this.element.attr('id') + '/';
-            Mapbender.elementRegistry.onElementReady(this.options.target, $.proxy(self._setup, self));
+            Mapbender.elementRegistry.waitReady(this.options.target).then(function(mbMap) {
+                self.mbMap = mbMap;
+                self._setup();
+            }, function() {
+                Mapbender.checkTarget("mbRedlining", self.options.target);
+            });
         },
         _setup: function(){
-            this.map = $('#' + this.options.target).data('mapbenderMbMap').map.olMap;
-            this.rowTemplate = this.element.find('.geometry-table tr').remove();
-            var selectControl = this.map.getControlsByClass('OpenLayers.Control.SelectFeature');
-            this.map.removeControl(selectControl[0]);
+            var $geomTable = $('.geometry-table', this.element);
+            // @todo: remove direct access to OpenLayers 2 map
+            this.map = this.mbMap.map.olMap;
+            this.rowTemplate = $('tr', $geomTable).remove();
             if(this.options.auto_activate || this.options.display_type === 'element'){
                 this.activate();
             }
+            $geomTable.on('click', '.geometry-remove', $.proxy(this._removeFromGeomList, this));
+            $geomTable.on('click', '.geometry-edit', $.proxy(this._modifyFeature, this));
+            $geomTable.on('click', '.geometry-zoom', $.proxy(this._zoomToFeature, this));
+            var self = this;
+            $('.redlining-tool', this.element).on('click', function() {
+                return self._onToolButtonClick($(this));
+            });
 
             this.setupMapEventListeners();
 
@@ -41,6 +50,7 @@
         },
         setupMapEventListeners: function() {
             $(document).on('mbmapsourceadded', this._moveLayerToLayerStackTop.bind(this));
+            $(document).on('mbmapsrschanged', this._onSrsChange.bind(this));
         },
         defaultAction: function(callback){
             this.activate(callback);
@@ -60,17 +70,23 @@
             } else {
                 this.element.removeClass('hidden');
             }
-            $('.redlining-tool', this.element).on('click', $.proxy(this._newControl, this));
         },
         deactivate: function(){
-            if (this.options.display_type === 'dialog'){
-                this._close();
-            }
-            if (this.options.display_type === 'dialog' && this.options.deactivate_on_close){
+            this._deactivateControl();
+            this._endEdit(null);
+            // end popup, if any
+            this._close();
+            if (this.options.deactivate_on_close) {
                 this._removeAllFeatures();
-                this.callback ? this.callback.call() : this.callback = null;
             }
-            $('.redlining-tool', this.element).off('click');
+            this.callback ? this.callback.call() : this.callback = null;
+        },
+        // sidepane interaction, safe to use activate / deactivate unchanged
+        reveal: function() {
+            this.activate();
+        },
+        hide: function() {
+            this.deactivate();
         },
         /**
          * deprecated
@@ -114,43 +130,50 @@
             this.element.removeClass('hidden');
         },
         _close: function(){
-            if(this.popup) {
+            if (this.popup) {
                 this.element.addClass('hidden').appendTo($('body'));
-                this._deactivateControl();
                 if(this.popup.$element) {
                     this.popup.destroy();
                 }
                 this.popup = null;
             }
         },
-        _newControl: function(e){
-            var self = this;
+        _onToolButtonClick: function($button) {
             this._endEdit();
-            if($(e.target).hasClass('active') === true) {
-                return;
+            if ($button.hasClass('active')) {
+                this._deactivateControl();
+            } else {
+                if (this.activeControl) {
+                    this._deactivateControl();
+                }
+                var toolName = $button.attr('name');
+                var control = this._controlFactory(toolName);
+                this.map.addControl(control);
+                control.activate();
+                this.activeControl = control;
+                $button.addClass('active');
             }
-            this._deactivateControl();
-            $(e.target).addClass('active');
-            switch(e.target.name)
-            {
+            return false;
+        },
+        _controlFactory: function(toolName){
+            var self = this;
+            switch(toolName) {
                 case 'point':
-                    this.activeControl = new OpenLayers.Control.DrawFeature(this.layer,
+                    return new OpenLayers.Control.DrawFeature(this.layer,
                             OpenLayers.Handler.Point, {
                                 featureAdded: function(e){
                                     self._addToGeomList(e, Mapbender.trans('mb.core.redlining.geometrytype.point'));
                                 }
                             });
-                    break;
                 case 'line':
-                    this.activeControl = new OpenLayers.Control.DrawFeature(this.layer,
+                    return new OpenLayers.Control.DrawFeature(this.layer,
                             OpenLayers.Handler.Path, {
                                 featureAdded: function(e){
                                     self._addToGeomList(e, Mapbender.trans('mb.core.redlining.geometrytype.line'));
                                 }
                             });
-                    break;
                 case 'polygon':
-                    this.activeControl = new OpenLayers.Control.DrawFeature(this.layer,
+                    return new OpenLayers.Control.DrawFeature(this.layer,
                             OpenLayers.Handler.Polygon, {
                                 handlerOptions: {
                                     handleRightClicks: false
@@ -159,9 +182,8 @@
                                     self._addToGeomList(e, Mapbender.trans('mb.core.redlining.geometrytype.polygon'));
                                 }
                             });
-                    break;
                 case 'rectangle':
-                    this.activeControl = new OpenLayers.Control.DrawFeature(this.layer,
+                    return new OpenLayers.Control.DrawFeature(this.layer,
                             OpenLayers.Handler.RegularPolygon, {
                                 handlerOptions: {
                                     sides: 4,
@@ -172,11 +194,10 @@
                                     self._addToGeomList(e, Mapbender.trans('mb.core.redlining.geometrytype.rectangle'));
                                 }
                             });
-                    break;
                 case 'text':
                     $('input[name=label-text]', this.element).val('');
                     $('#redlining-text-wrapper', this.element).removeClass('hidden');
-                    this.activeControl = new OpenLayers.Control.DrawFeature(this.layer,
+                    return new OpenLayers.Control.DrawFeature(this.layer,
                             OpenLayers.Handler.Point, {
                                 featureAdded: function (feature) {
                                     if ($('input[name=label-text]', self.element).val().trim() === '') {
@@ -190,11 +211,7 @@
                                     }
                                 }
                             });
-                    break;
             }
-            this.map.addControl(this.activeControl);
-            this.activeControl.activate();
-
         },
         _removeFeature: function(feature){
             this.layer.destroyFeatures([feature]);
@@ -205,7 +222,7 @@
         },
         _endEdit: function(nextControl) {
             var editFeature = (this.editControl || {}).feature;
-            if (nextControl !== this.editControl) {
+            if (this.editControl && nextControl !== this.editControl) {
                 this.editControl.deactivate();
             }
             if (editFeature && editFeature.style && editFeature.style.label) {
@@ -236,23 +253,19 @@
             }
         },
         _addToGeomList: function(feature, typeLabel){
-            var self = this;
             var activeTool = $('.redlining-tool.active', this.element).attr('name');
             var row = this.rowTemplate.clone();
             row.attr("data-id", feature.id);
             $('.geometry-name', row).text(this._getGeomLabel(feature, typeLabel, activeTool));
             var $geomtable = $('.geometry-table', this.element);
             $geomtable.append(row);
-            $('.geometry-remove', $geomtable).off('click');
-            $('.geometry-remove', $geomtable).on('click', $.proxy(self._removeFromGeomList, self));
-            $('.geometry-edit', $geomtable).off('click');
-            $('.geometry-edit', $geomtable).on('click', $.proxy(self._modifyFeature, self));
-            $('.geometry-zoom', $geomtable).off('click');
-            $('.geometry-zoom', $geomtable).on('click', $.proxy(self._zoomToFeature, self));
         },
         _removeFromGeomList: function(e){
             var $tr = $(e.target).parents("tr:first");
             var eventFeature = this.layer.getFeatureById($tr.attr('data-id'));
+            if (this.editControl && this.editControl.active && this.editControl.feature === eventFeature) {
+                this._endEdit(null);
+            }
             this._removeFeature(eventFeature);
             $tr.remove();
         },
@@ -276,8 +289,7 @@
         _zoomToFeature: function(e){
             this._deactivateControl();
             var feature = this.layer.getFeatureById($(e.target).parents("tr:first").attr('data-id'));
-            var bounds = feature.geometry.getBounds();
-            this.map.zoomToExtent(bounds);
+            this.mbMap.getModel().zoomToFeature(feature);
         },
         _generateTextStyle: function(label){
             var style = OpenLayers.Util.applyDefaults(null, OpenLayers.Feature.Vector.style['default']);
@@ -319,9 +331,22 @@
          * @private
          */
         _moveLayerToLayerStackTop: function(event, params) {
+            this._endEdit(null);
             if (this.layer) {
                 this.map.raiseLayer(this.layer, this.map.getNumLayers());
                 this.map.resetLayersZIndex();
+            }
+        },
+        _onSrsChange: function(event, data) {
+            this._endEdit(null);
+            this._deactivateControl();
+            if (this.layer) {
+                (this.layer.features || []).map(function(feature) {
+                    if (feature.geometry && feature.geometry.transform) {
+                        feature.geometry.transform(data.from, data.to);
+                    }
+                });
+                this.layer.redraw();
             }
         }
     });

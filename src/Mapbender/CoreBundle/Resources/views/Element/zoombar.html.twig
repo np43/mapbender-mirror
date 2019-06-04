@@ -1,5 +1,10 @@
 {% spaceless %}
 <div id="{{ id }}" class="mb-element mb-element-zoombar {{configuration.anchor}}">
+    {% if configuration.draggable is defined and configuration.draggable %}
+      <div class="move-icon-wrap">
+          <span class="iconMove"></span>
+      </div>
+    {% endif %}
   {% if 'pan' in configuration.components %}
   <div class="pan">
     <span class="panUp iconTop" title="{{ "mb.core.zoombar.panup" | trans }}"></span>
@@ -28,13 +33,13 @@
     {% if 'zoom_in_out' in configuration.components or 'zoom_slider' in configuration.components %}
       <li class="zoomSlider">
         {% if 'zoom_in_out' in configuration.components %}
-        <span class="iconZoomIn iconBig" title="{{ "mb.core.zoombar.zoomin" | trans }}"></span>
+        <div class="iconZoomIn iconBig" title="{{ "mb.core.zoombar.zoomin" | trans }}"></div>
         {% endif %}
         {% if 'zoom_slider' in configuration.components %}
         <ul class="zoomSliderLevels"></ul>
         {% endif %}
         {% if 'zoom_in_out' in configuration.components %}
-        <span class="iconZoomOut iconBig" title="{{ "mb.core.zoombar.zoomout" | trans }}"></span>
+        <div class="iconZoomOut iconBig" title="{{ "mb.core.zoombar.zoomout" | trans }}"></div>
         {% endif %}
       </li>
     {% endif %}

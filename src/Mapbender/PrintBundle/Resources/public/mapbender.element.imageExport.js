@@ -1,7 +1,8 @@
 (function($){
 
     /**
-     * @typedef {{type:string, opacity:number, geometries: Array<Object>}} VectorLayerData~print
+     * @typedef {{type:string, opacity:number, geometries: Array<Object>}} VectorLayerData~export
+     * @typedef {{type:string, opacity:number, markers: Array<Object>}} MarkerLayerData~export
      */
     $.widget("mapbender.mbImageExport", {
         options: {},
@@ -45,7 +46,7 @@
                             label: Mapbender.trans("mb.print.imageexport.popup.btn.cancel"),
                             cssClass: 'button buttonCancel critical right',
                             callback: function(){
-                                self.close();
+                                this.close();
                             }
                         },
                         'ok': {
@@ -57,15 +58,11 @@
                         }
                     }
                 });
-                this.popup.$element.on('close', $.proxy(this.close, this));
+                this.popup.$element.one('close', $.proxy(this.close, this));
             }
         },
         close: function(){
             if (this.popup) {
-                if (this.popup.$element) {
-                    // prevent infinite event handling recursion
-                    this.popup.$element.off('close');
-                }
                 this.popup.close();
                 this.popup = null;
             }
@@ -98,17 +95,7 @@
          * @private
          */
         _getRasterSourceDefs: function() {
-            var sourceTree = this.map.getSourceTree();
-            return sourceTree.filter(function(sourceDef) {
-                var layer = this.map.model.getNativeLayer(sourceDef);
-                if (0 !== layer.CLASS_NAME.indexOf('OpenLayers.Layer.')) {
-                    return false;
-                }
-                if (typeof (Mapbender.source[sourceDef.type] || {}).getPrintConfig !== 'function') {
-                    return false;
-                }
-                return true;
-            }.bind(this));
+            return this.map.getSourceTree();
         },
         _getExportScale: function() {
             return null;
@@ -140,7 +127,7 @@
             var mapExtent = this._getExportExtent();
             var imageSize = this.map.map.olMap.getCurrentSize();
             var rasterLayers = this._collectRasterLayerData();
-            var geometryLayers = this._collectGeometryLayers();
+            var geometryLayers = this._collectGeometryAndMarkerLayers();
             return {
                 layers: rasterLayers.concat(geometryLayers),
                 width: imageSize.w,
@@ -150,8 +137,8 @@
                     y: mapExtent.getCenterLonLat().lat
                 },
                 extent: {
-                    width: mapExtent.getWidth(),
-                    height: mapExtent.getHeight()
+                    width: Math.abs(mapExtent.getWidth()),
+                    height: Math.abs(mapExtent.getHeight())
                 }
             };
         },
@@ -190,6 +177,22 @@
             return true;
         },
         /**
+         * Should return true if the given layer needs to be included in export
+         *
+         * @param {OpenLayers.Layer.Markers|OpenLayers.Layer} layer
+         * @returns {boolean}
+         * @private
+         */
+        _filterMarkerLayer: function(layer) {
+            if ('OpenLayers.Layer.Markers' !== layer.CLASS_NAME || layer.visibility === false || this.layer === layer) {
+                return false;
+            }
+            if (!(layer.markers && layer.markers.length)) {
+                return false;
+            }
+            return layer.opacity > 0;
+        },
+        /**
          * Should return true if the given feature should be included in export.
          *
          * @param {OpenLayers.Feature.Vector} feature
@@ -220,6 +223,9 @@
             } else {
                 geometry.style = layer.styleMap.createSymbolizer(feature, feature.renderIntent);
             }
+            if (geometry.style && geometry.style.externalGraphic) {
+                geometry.style.externalGraphic = this._fixAssetPath(geometry.style.externalGraphic);
+            }
             return geometry;
         },
         /**
@@ -231,6 +237,9 @@
          */
         _filterFeatureGeometry: function(geometry) {
             if (geometry.style.fillOpacity > 0 || geometry.style.strokeOpacity > 0) {
+                return true;
+            }
+            if (geometry.style.externalGraphic) {
                 return true;
             }
             if (geometry.style.label !== undefined) {
@@ -258,12 +267,71 @@
                 geometries: geometries
             };
         },
-        _collectGeometryLayers: function() {
+        /**
+         * Should return export data (sent to backend) for the given geometry layer. Given layer is guaranteed
+         * to have passsed through the _filterGeometryLayer check positively.
+         *
+         * @param {OpenLayers.Layer.Markers|OpenLayers.Layer} layer
+         * @returns MarkerLayerData~export
+         * @private
+         */
+        _extractMarkerLayerData: function(layer) {
+            var markerData = [];
+            for (var i = 0; i < layer.markers.length; ++i) {
+                var marker = layer.markers[i];
+                var originalUrl = marker.icon && marker.icon.url;
+                var internalUrl = this._fixAssetPath(originalUrl);
+                if (!internalUrl) {
+                    continue;
+                }
+                markerData.push({
+                    coordinates: {
+                        x: marker.lonlat.lon,
+                        y: marker.lonlat.lat
+                    },
+                    width: marker.icon.size.w,
+                    height: marker.icon.size.h,
+                    offset: {
+                        x: marker.icon.offset.x,
+                        y: marker.icon.offset.y
+                    },
+                    path: internalUrl
+                });
+            }
+            return {
+                type: 'markers',
+                opacity: layer.opacity,
+                markers: markerData
+            };
+        },
+        _collectGeometryAndMarkerLayers: function() {
             // Iterating over all vector layers, not only the ones known to MapQuery
-            return this.map.map.olMap.layers
-                .filter(this._filterGeometryLayer.bind(this))
-                .map(this._extractGeometryLayerData.bind(this))
-            ;
+            var allOlLayers = this.map.map.olMap.layers;
+            var layerDataOut = [];
+            for (var i = 0; i < allOlLayers.length; ++i) {
+                var olLayer = allOlLayers[i];
+                if (this._filterGeometryLayer(olLayer)) {
+                    layerDataOut.push(this._extractGeometryLayerData(olLayer));
+                } else if (this._filterMarkerLayer(olLayer)) {
+                    layerDataOut.push(this._extractMarkerLayerData(olLayer));
+                }
+            }
+            return layerDataOut;
+        },
+        /**
+         * Convert potentially absolute URL to web-local url pointing somewhere into bundles/
+         * @param {String} url
+         * @returns {String|boolean}
+         * @private
+         */
+        _fixAssetPath: function(url) {
+            var urlOut = url.replace(/^.*?(\/)(bundles\/.*)/, '$2');
+            if (urlOut === url) {
+                console.warn("Asset path could not be resolved to local bundles reference", url);
+                return false;
+            } else {
+                return urlOut;
+            }
         },
         /**
          * Check BBOX format inversion
