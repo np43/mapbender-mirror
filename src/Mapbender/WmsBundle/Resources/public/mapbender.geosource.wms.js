@@ -21,10 +21,6 @@ window.Mapbender.WmsSource = (function() {
             }
         });
         this.customParams = customParams;
-
-        if(definition.fakeLayer){
-            this.nativeLayers = definition.nativeLayers;
-        }
     }
     WmsSource.prototype = Object.create(Mapbender.Source.prototype);
     WmsSource.prototype.constructor = WmsSource;

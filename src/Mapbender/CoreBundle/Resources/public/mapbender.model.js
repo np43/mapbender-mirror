@@ -1752,7 +1752,9 @@ window.Mapbender.Model = $.extend(Mapbender && Mapbender.Model || {}, {
             if (initializePod || typeof initializePod === 'undefined') {
                 if (!(_s instanceof Mapbender.Source)) {
                     var sourceObj = Mapbender.Source.factory(_s);
-                    if (initializeLayers) {
+                    if(_s.fakeLayer){
+                        sourceObj.nativeLayers = [source];
+                    }else if (initializeLayers) {
                         projCode = projCode || this.getCurrentProjectionCode();
                         sourceObj.initializeLayers(projCode);
                     }
