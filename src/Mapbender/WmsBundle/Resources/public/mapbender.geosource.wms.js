@@ -22,7 +22,7 @@ window.Mapbender.WmsSource = (function() {
         });
         this.customParams = customParams;
 
-        if(definition.title === 'Karten'){
+        if(definition.fakeLayer){
             this.nativeLayers = definition.nativeLayers;
         }
     }
