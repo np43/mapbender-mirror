@@ -189,61 +189,9 @@ Mapbender.Geo.SourceHandler = {
         var layerChanges = {
         };
 
-        /**
-         * TODO TESTEN erstmal auskommentieren nach Upgrade testen
-         * layerChanges = $.extend(layerChanges, self.createOptionsChangeObject(source.configuration.children[0], changeOptions, defaultSelected, mergeSelected));
-         */
-        function setSelected(layer) {
-            var layerOpts = changeOptions.layers[layer.options.id];
-            var newTreeOptions = {
-                selected: null
-            };
-            var changedTreeOptions;
-            if (layer.children && layer.children.length) {
-                for (var i = 0; i < layer.children.length; i++) {
-                    if (setSelected(layer.children[i])) {
-                        newTreeOptions.selected = true;
-                    }
-                }
-                if (newTreeOptions.selected === null && layerOpts) {
-                    newTreeOptions.selected = layerOpts.options.treeOptions.selected;
-                }
-                if (newTreeOptions.selected === null && defaultSelected !== null) {
-                    newTreeOptions.selected = defaultSelected;
-                }
-            } else {
-                newTreeOptions.selected = layerOpts ? layerOpts.options.treeOptions.selected : defaultSelected;
-            }
-            if (mergeSelected) {
-                newTreeOptions.selected = newTreeOptions.selected || layer.options.treeOptions.selected;
-            }
-            if (newTreeOptions.selected === null) {
-                return null;
-            }
 
-            if (newTreeOptions.selected !== layer.options.treeOptions.selected) {
-                changedTreeOptions = {
-                    selected: newTreeOptions.selected
-                };
-                if (mergeSelected && !newTreeOptions.selected) {
-                    newTreeOptions.info = layer.options.treeOptions.info;
-                } else {
-                    newTreeOptions.info = newTreeOptions.selected;
-                }
-                newTreeOptions.info = newTreeOptions.info && layer.options.treeOptions.allow.info;
-                if (newTreeOptions.info !== layer.options.treeOptions.info) {
-                    changedTreeOptions.info = newTreeOptions.info;
-                }
-            }
-            if (changedTreeOptions) {
-                layerChanges[layer.options.id] = {
-                    options: {
-                        treeOptions: changedTreeOptions
-                    }
-                };
-            }
-            return newTreeOptions.selected;
-        }
+        layerChanges = $.extend(layerChanges, self.createOptionsChangeObject(source.configuration.children[0], changeOptions, defaultSelected, mergeSelected));
+
         var changed = {
             sourceIdx: {
                 id: source.id
@@ -271,7 +219,7 @@ Mapbender.Geo.SourceHandler = {
             }
         }
         newTreeOptions = $.extend({}, self.createOptionsLayerSelection(layer, layerOpts, defaultSelected, mergeSelected));
-        newTreeOptions = $.extend(newTreeOptions, self.createOptionsLayerInfo(layer, newTreeOptions.selected));
+        newTreeOptions = $.extend(newTreeOptions, self.createOptionsLayerInfo(newTreeOptions, layerOpts));
 
         //Änderungen werden nur dann relevant sollten sie sich von der Default-Konfig unterscheiden
         if (newTreeOptions.selected !== layer.options.treeOptions.selected) {
@@ -309,16 +257,14 @@ Mapbender.Geo.SourceHandler = {
             selected: sel
         };
     },
-    createOptionsLayerInfo: function(layer, layerSelection){
-        if(!layer){
-            return;
-        }
 
-        var info = layerSelection && layer.options.treeOptions.allow.info;
+    createOptionsLayerInfo: function(newTreeOptions, layerOpts){
+        var info = newTreeOptions.selected && layerOpts.options.treeOptions.info;
         return {
             info: info
         };
     },
+
     /**
      * Gets a layer extent, or the source extent as a fallback
      *
