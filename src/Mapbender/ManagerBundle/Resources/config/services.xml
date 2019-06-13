@@ -12,6 +12,7 @@
     <services>
         <service id="mapbender.manager.element_form_factory.service" class="%mapbender.manager.element_form_factory.service.class%">
             <argument type="service" id="form.factory" />
+            <argument type="service" id="mapbender.element_inventory.service" />
             <argument type="service" id="service_container" />
             <argument key="strict">%mapbender.strict.element_api.form_type%</argument>
         </service>
@@ -26,6 +27,11 @@
             <argument type="service" id="doctrine.orm.default_entity_manager" />
             <argument type="service" id="security.authorization_checker" />
             <argument type="service" id="form.factory" />
+        </service>
+        <service id="mapbender.twig.manager.menu" class="Mapbender\ManagerBundle\Extension\Twig\MenuExtension">
+            <tag name="twig.extension"/>
+            <argument type="service" id="kernel" />
+            <argument type="service" id="security.authorization_checker" />
         </service>
     </services>
 </container>

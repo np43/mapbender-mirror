@@ -2,9 +2,16 @@
 
     $.widget("mapbender.mbOverview", {
         options: {
-            layerset: []
+            layerset: 0,
+            target: null,
+            width: 200,
+            height: 100,
+            anchor: 'right-top',
+            maximized: true,
+            fixed: false
         },
         overview: null,
+        mbMap: null,
 
         /**
          * Creates the overview
@@ -13,111 +20,102 @@
             if(!Mapbender.checkTarget("mbOverview", this.options.target)){
                 return;
             }
-            var self = this;
-            Mapbender.elementRegistry.onElementReady(this.options.target, $.proxy(self._setup, self));
+            Mapbender.elementRegistry.onElementReady(this.options.target, $.proxy(this._setup, this));
         },
 
         /**
          * Initializes the overview
          */
-        _setup:         function() {
-            var widget = this;
-            var options = widget.options;
-            var mbMap = $('#' + options.target).data('mapbenderMbMap');
-            var model = mbMap.model;
-            var element = $(widget.element);
-            var projection = model.map.olMap.projection;
-            var maxExtent = model.map.olMap.maxExtent;
-            var overviewLayers = [];
-            var layerSet = Mapbender.configuration.layersets[options.layerset];
-            var overviewContainer = $('.overviewContainer', widget.element).get(0);
+        _setup: function() {
+            this.mbMap = $('#' + this.options.target).data('mapbenderMbMap');
 
-            element.addClass(options.anchor);
+            this.element.addClass(this.options.anchor);
 
-            $.each(layerSet, function(idx, item) {
-                $.each(item, function(idx2, layerDef) {
-                    if(layerDef.type !== "wms") {
-                        return;
-                    }
-                    var wmsLayer = widget.createWmsLayer(layerDef, {
-                        isBaseLayer: idx === 0
-                    });
+            this._initOverview();
 
-                    overviewLayers.push(wmsLayer);
-                });
-            });
-
-            if(!overviewLayers.length){
-                Mapbender.info(Mapbender.trans("mb.core.overview.nolayer"));
-                return;
+            if (!this.options.maximized) {
+                this.element.addClass("closed");
             }
 
-            var overviewOptions = {
-                layers: overviewLayers,
-                div: overviewContainer,
-                size: new OpenLayers.Size(options.width, options.height),
-                //maximized: widget.options.maximized,
+            $('.toggleOverview', this.element).on('click', $.proxy(this._openClose, this));
+            this._trigger('ready');
+        },
+        _initOverview: function() {
+            this.overview = this._createOverviewControl();
+            if (this.overview) {
+                this.mbMap.map.olMap.addControl(this.overview);
+                $(document).on('mbmapsrschanged', $.proxy(this._onMbMapSrsChanged, this));
+            }
+        },
+        _createOverviewControl: function() {
+            var layers = this._createLayers();
+            if (!layers.length){
+                Mapbender.info(Mapbender.trans("mb.core.overview.nolayer"));
+                return false;
+            }
+            var projection = this.mbMap.getModel().getCurrentProjectionCode();
+            var maxExtent = this.mbMap.map.olMap.maxExtent;
+
+            var options = {
+                layers: layers,
+                div: $('.overviewContainer', this.element).get(0),
+                size: new OpenLayers.Size(this.options.width, this.options.height),
                 mapOptions: {
                     maxExtent: (maxExtent && maxExtent.clone()) || null,
                     projection: projection,
                     theme: null
                 }
             };
-
-            if(options.fixed){
-                $.extend(overviewOptions, {
+            if (this.options.fixed){
+                $.extend(options, {
                     minRatio: 1,
                     maxRatio: 1000000000
                     // ,autoPan: false
                 });
             }
-
-            widget.overview = new OpenLayers.Control.OverviewMap(overviewOptions);
-
-            mbMap.map.olMap.addControl(widget.overview);
-
-            $(document).bind('mbmapsrschanged', $.proxy(widget._changeSrs, widget));
-            element.find('.toggleOverview').bind('click', $.proxy(widget._openClose, widget));
-            
-            if(!options.maximized){
-                element.addClass("closed");
-            }    
-            this._trigger('ready');
+            return new OpenLayers.Control.OverviewMap(options);
         },
-
-        /**
-         * Create WMS layer by definition
-         * @param layerDefinition
-         * @param options
-         * @returns {*}
-         */
-        createWmsLayer: function(layerDefinition, options) {
-            var ls = "";
-            var layerConfiguration = layerDefinition.configuration;
-            var layerOptions = layerConfiguration.options;
-            var layers = Mapbender.source[layerDefinition.type].getLayersList(layerDefinition, layerConfiguration.children[0], true);
-            var url = layerOptions.url;
-
-            for (var i = 0; i < layers.layers.length; i++) {
-                ls += layers.layers[i].options.name !== "" ? "," + layers.layers[i].options.name : "";
+        _getSourceInstanceDefinitions: function() {
+            var instanceDefs = [];
+            var layerSet = (Mapbender.configuration.layersets[this.options.layerset] || []).slice().reverse();
+            for (var lsix = 0; lsix < layerSet.length; ++lsix) {
+                var instanceMap = layerSet[lsix];
+                var instanceIds = Object.keys(instanceMap);
+                for (var idIndex = 0; idIndex < instanceIds.length; ++ idIndex) {
+                    var instanceId = instanceIds[idIndex];
+                    instanceDefs.push(instanceMap[instanceId]);
+                }
             }
-
-            // Add proxy if needed
-            if(layerOptions.proxy) {
-                url = OpenLayers.ProxyHost + encodeURIComponent(url);
-            }
-
-            return new OpenLayers.Layer.WMS(layerDefinition.title, url, {
-                version:     layerOptions.version,
-                layers:      ls.substring(1),
-                format:      layerOptions.format,
-                transparent: layerOptions.transparent
-            }, $.extend({
-                opacity:    layerOptions.opacity,
-                singleTile: true
-            }, options));
+            return instanceDefs;
         },
-
+        _createLayers: function() {
+            var layers = [];
+            var srsName = this.mbMap.getModel().getCurrentProjectionCode();
+            var instanceDefs = this._getSourceInstanceDefinitions();
+            for (var i = 0; i < instanceDefs.length; ++i) {
+                var source = instanceDefs[i];
+                // Legacy HACK: Overview ignores backend settings on instance layers, enables all children
+                //        of the root layer with non-empty names, ignores every other layer
+                var activatedLayers = source.getActivatedLeaves();
+                var nonEmptyLayerNames = activatedLayers.map(function(sourceLayer) {
+                    return sourceLayer.options.name;
+                }).filter(function(layerName) {
+                    return !!layerName;
+                });
+                if (nonEmptyLayerNames.length) {
+                    layers = layers.concat(source.createNativeLayers(srsName).map(function(nativeLayer) {
+                        nativeLayer.mergeNewParams({
+                            LAYERS: nonEmptyLayerNames
+                        });
+                        return nativeLayer;
+                    }));
+                }
+            }
+            if (layers.length) {
+                layers[0].setIsBaseLayer(true);
+            }
+            return layers;
+        },
         /**
          * Opens/closes the overview element
          */
@@ -125,51 +123,76 @@
             var self = this;
             $(this.element).toggleClass('closed');
             window.setTimeout(function(){
-                if(!$(self.element).hasClass('closed')){
-                    self.overview.ovmap.updateSize();
+                if (!$(self.element).hasClass('closed')) {
+                    if (self.overview === null) {
+                        self._initOverview();
+                    } else if (self.overview && self.overview.ovmap) {
+                        self.overview.ovmap.updateSize();
+                    }
                 }
             }, 300);
         },
-
         /**
          * Cahnges the overview srs
          */
-        _changeSrs: function(event, srs) {
-            console.log("Overview changesrs event", event, srs);
-            var widget = this;
-            var overview = widget.overview;
+        _onMbMapSrsChanged: function(event, data) {
+            if (data.mbMap !== this.mbMap) {
+                return;
+            }
+            var oldProj = this.overview.ovmap.getProjectionObject();
+            if (oldProj.projCode === data.to.projCode) {
+                return;
+            }
+            var newCenter = this.overview.ovmap.getCenter().clone().transform(oldProj, data.to);
+            // NOTE: this extent is already transformed
+            var newMaxExtent = this.mbMap.model.map.olMap.maxExtent || null;
+            if (newMaxExtent) {
+                newMaxExtent = newMaxExtent.clone();
+            }
+            try {
+                this._changeSrs(data.to.projCode, newCenter, newMaxExtent);
+            } catch (e) {
+                console.error("Overview srs change failed", e);
+            }
+        },
+        _changeSrs: function(srsCode, newCenter, newMaxExtent) {
             /**
              * @type {null|OpenLayers.Map}
              */
-            var ovMap = overview.ovmap;
-            var oldProj = ovMap.getProjectionObject();
-            if (oldProj.projCode === srs.projection.projCode) {
-                return;
-            }
-            var center = ovMap.getCenter().transform(oldProj, srs.projection);
+            var ovMap = this.overview.ovmap;
 
-            ovMap.projection = srs.projection;
-            ovMap.displayProjection = srs.projection;
-            ovMap.units = srs.projection.proj.units;
-            if (ovMap.maxExtent) {
-                ovMap.maxExtent = ovMap.maxExtent.clone();
-                ovMap.maxExtent.transform(oldProj, srs.projection);
-            }
-
-            $.each(ovMap.layers, function(idx, layer) {
-                layer.projection = srs.projection;
-                layer.units = srs.projection.proj.units;
-                if (layer.maxExtent) {
-                    layer.maxExtent = layer.maxExtent.clone();
-                    layer.maxExtent.transform(oldProj, srs.projection);
+            var baseLayer = ovMap.layers[0];
+            var layerUpdateOrder = ovMap.layers.filter(function(l) {
+                return ovMap.baseLayer !== l;
+            }).concat(ovMap.layers.filter(function(l) {
+                if (ovMap.baseLayer === l) {
+                    baseLayer = l;
+                    return true;
+                } else {
+                    return false;
                 }
-                layer.initResolutions();
-            });
-            console.log("New overview params", center, ovMap.getZoom());
-
-            ovMap.setCenter(center, ovMap.getZoom(), false, true);
+            }));
+            var layerOptions = {
+                projection: srsCode
+            };
+            if (newMaxExtent) {
+                layerOptions.maxExtent = newMaxExtent;
+            }
+            try {
+                for (var lix = 0; lix < layerUpdateOrder.length; ++lix) {
+                    var layer = layerUpdateOrder[lix];
+                    layer.addOptions(layerOptions);
+                }
+                ovMap.displayProjection = baseLayer.projection;
+                ovMap.projection = baseLayer.projection;
+                ovMap.maxExtent = baseLayer.maxExtent;
+                ovMap.units = baseLayer.units;
+                ovMap.setCenter(newCenter, null, false, true);
+                this.overview.update();
+            } catch (e) {
+                console.error("Overview srs change failed", e);
+            }
         }
-
     });
 
 })(jQuery);

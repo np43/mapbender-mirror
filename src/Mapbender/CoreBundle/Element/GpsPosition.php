@@ -3,12 +3,14 @@
 namespace Mapbender\CoreBundle\Element;
 
 use Mapbender\CoreBundle\Component\Element;
+use Mapbender\CoreBundle\Component\ElementBase\ConfigMigrationInterface;
+use Mapbender\CoreBundle\Entity;
 
 /**
  * Class GpsPosition
  * @package Mapbender\CoreBundle\Element
  */
-class GpsPosition extends Element
+class GpsPosition extends Element implements ConfigMigrationInterface
 {
 
     /**
@@ -81,7 +83,6 @@ class GpsPosition extends Element
             'average'               => 1,
             'follow'                => false,
             'centerOnFirstPosition' => true,
-            'zoomToAccuracy'        => false,
             'zoomToAccuracyOnFirstPosition' => true,
         );
     }
@@ -94,6 +95,11 @@ class GpsPosition extends Element
         return 'mapbender.mbGpsPosition';
     }
 
+    public function getFrontendTemplatePath($suffix = '.html.twig')
+    {
+        return 'MapbenderCoreBundle:Element:gpsposition.html.twig';
+    }
+
     /**
      * @inheritdoc
      */
@@ -101,14 +107,11 @@ class GpsPosition extends Element
     {
         $configuration = $this->getConfiguration();
         return $this->container->get('templating')
-            ->render(
-                'MapbenderCoreBundle:Element:gpsposition.html.twig',
-                array(
+            ->render($this->getFrontendTemplatePath(), array(
                     'id' => $this->getId(),
                     'configuration' => $configuration,
-                    'title' => $this->getTitle()
-                )
-            );
+                    'title' => $this->getTitle(),
+        ));
     }
 
     /**
@@ -117,5 +120,15 @@ class GpsPosition extends Element
     public static function getFormTemplate()
     {
         return 'MapbenderManagerBundle:Element:gpsposition.html.twig';
+    }
+
+    public static function updateEntityConfig(Entity\Element $entity)
+    {
+        $config = $entity->getConfiguration() ?: array();
+        if (!empty($config['zoomToAccuracy']) && isset($config['centerOnFirstPosition'])) {
+            $config['zoomToAccuaryOnFirstPosition'] = $config['centerOnFirstPosition'];
+        }
+        unset($config['zoomToAccuracy']);
+        $entity->setConfiguration($config);
     }
 }

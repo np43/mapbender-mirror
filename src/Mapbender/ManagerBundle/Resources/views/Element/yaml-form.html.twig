@@ -1,4 +1,4 @@
-<div class="elementFormYaml elementForm">
+<!--div class="elementFormYaml elementForm">
     <style media="all">
         #elementForm {
             width: 100%;
@@ -166,7 +166,11 @@
                 height: $(window).height() - 285
             }, 350);
         })
-    </script>
+    </script-->
+<div class="elementForm wideLabelForm">
+    <div class="messageBox hint">
+      {{ "mb.manager.element.yaml.message" | trans | raw }}
+    </div>
     {{ form_label(form.title) }}{{ form_widget(form.title) }}
     <div class="clearContainer"></div>
     {{ form_label(form.configuration) }}{{ form_widget(form.configuration) }}

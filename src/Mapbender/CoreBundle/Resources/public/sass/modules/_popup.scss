@@ -5,7 +5,9 @@
 }
 
 .popupHead {
-  @extend .title;
+  .popupTitle {
+    @extend .title;
+  }
   border-bottom:dashed 1px darken(#fff, 30%);
   &.draggable{cursor:move;}
   margin:0 $space $space $space;
@@ -19,6 +21,11 @@
 .fom-popup {
   .popupButtons{
     @include absolute('' $space $space 0);
+  }
+}
+.mapbender-popup {
+  .popupButtons {
+    text-align: right;
   }
 }
 .mapbender-popup {
@@ -47,7 +54,9 @@
   }
 }
 
-.popupSubTitle{@extend .labelInput;}
+.popupSubTitle{
+  @extend .smallText;
+}
 .fom-popup {
   .popupContent, .popupSubContent{
     padding:0 20px;
@@ -63,8 +72,11 @@
 }
 
 .popup {
-  &.fom-popup {
+  &.ui-resizable {
     min-width: 300px;
+    min-height: 250px;
+  }
+  &.fom-popup {
     min-height: 250px;
     width: $popupModalWidth;
     padding-bottom:$space;
@@ -143,11 +155,11 @@
 }
 .ui-resizable-se{
   font-size: 16px;
-  @extend .icon;
   @include absolute('' 3px -3px '');
   @include transform(rotate(45deg));
   cursor: default;
   &:before{
+    font-family: FontAwesome;
     content: "\f054";
     display: block;
   }

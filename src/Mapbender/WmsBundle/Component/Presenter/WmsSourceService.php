@@ -4,6 +4,7 @@
 namespace Mapbender\WmsBundle\Component\Presenter;
 
 use Mapbender\CoreBundle\Component\Presenter\SourceService;
+use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Entity\SourceInstance;
 use Mapbender\CoreBundle\Utils\UrlUtil;
 use Mapbender\WmsBundle\Component\VendorSpecificHandler;
@@ -22,7 +23,6 @@ class WmsSourceService extends SourceService
     {
         /** @var WmsInstance $sourceInstance */
         return parent::getInnerConfiguration($sourceInstance) + array(
-            /** @todo: replace WmsInstanceConfigurationOptions stuff with a local implementation */
             'options' => $this->getOptionsConfiguration($sourceInstance),
             'children' => array($this->getRootLayerConfig($sourceInstance)),
         );
@@ -30,7 +30,6 @@ class WmsSourceService extends SourceService
 
     public function getOptionsConfiguration(WmsInstance $sourceInstance)
     {
-        // return WmsInstanceConfigurationOptions::fromEntity($sourceInstance)->toArray();
         $buffer = max(0, intval($sourceInstance->getBuffer()));
         $ratio = $sourceInstance->getRatio();
         if ($ratio !== null) {
@@ -119,15 +118,9 @@ class WmsSourceService extends SourceService
     public function getUrlOption(WmsInstance $sourceInstance)
     {
         $url = $sourceInstance->getSource()->getGetMap()->getHttpGet();
-        $params = array();
-        foreach ($sourceInstance->getDimensions() as $dimension) {
-            if ($dimension->getActive() && $dimension->getDefault()) {
-                $params[$dimension->getParameterName()] = $dimension->getDefault();
-            }
-        }
         $userToken = $this->container->get('security.token_storage')->getToken();
         $vsHandler = new VendorSpecificHandler();
-        $params = array_replace($params, $vsHandler->getPublicParams($sourceInstance, $userToken));
+        $params = $vsHandler->getPublicParams($sourceInstance, $userToken);
         return UrlUtil::validateUrl($url, $params);
     }
 
@@ -194,5 +187,22 @@ class WmsSourceService extends SourceService
          *       layer order explicitly
          * @see WmsInstance::getLayerOrder()
          */
+    }
+
+    public function getAssets(Application $application, $type)
+    {
+        switch ($type) {
+            case 'js':
+                return array(
+                    '@MapbenderCoreBundle/Resources/public/mapbender.geosource.js',
+                    '@MapbenderWmsBundle/Resources/public/mapbender.geosource.wms.js',
+                );
+            case 'trans':
+                return array(
+                    'MapbenderCoreBundle::geosource.json.twig',
+                );
+            default:
+                throw new \InvalidArgumentException("Unsupported type " . print_r($type, true));
+        }
     }
 }

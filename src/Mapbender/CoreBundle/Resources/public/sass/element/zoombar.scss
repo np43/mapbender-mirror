@@ -1,124 +1,100 @@
-@mixin opacityAlpha($alpha) {
-  /* Required for IE 5, 6, 7 */
-  /* ...or something to trigger hasLayout, like zoom: 1; */
-
-  /* Theoretically for IE 8 & 9 (more valid) */
-  /* ...but not required as filter works too */
-  /* should come BEFORE filter */
-  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=$alpha*100);
-
-  /* This works in IE 8 & 9 too */
-  /* ... but also 5, 6, 7 */
-  filter: alpha(opacity=$alpha*100);
-
-  /* Older than Firefox 0.9 */
-  -moz-opacity:$alpha;
-
-  /* Safari 1.x (pre WebKit!) */
-  -khtml-opacity: $alpha;
-
-  /* Modern!
-  /* Firefox 0.9+, Safari 2?, Chrome any?
-  /* Opera 9+, IE 9+ */
-  opacity: $alpha;
-}
-
 .mb-element-zoombar{
-  &.iconMove:before{
-    @include absolute(-$space 0 '' '');
+  width: 49px;  // for .pan item positioning
+  text-align: center; // support .toolPane automatic centering
+
+  .pan, .toolPane {
+    @include frontendContainerStyle();
+    color: fade-out($lightFontColor, .3);
   }
+
+  .pan > span {
+    &:hover {
+      color: $lightFontColor;
+    }
+    &:before {
+      margin: 0;
+    }
+  }
+  .toolPane > li {
+    [title]:hover {
+      color: $lightFontColor;
+    }
+    &.activeZoomIcon {
+      color: $lightFontColor;
+    }
+  }
+
   /**
   * Map navigation buttons
   */
   .pan{
     height: 49px;
-    width: 49px;
+    width: 100%;
     position:relative;
     @include border-radius(50%,50%);
-    @include frontendContainerStyle();
+
 
     .iconTop{@include absolute(1px '' '' 18px);}
     .iconRight{@include absolute(15px 6px '' '');}
     .iconDown{@include absolute('' '' 1px 18px);}
     .iconLeft{@include absolute(15px '' '' 7px);}
   }
+  &.right-top, &.right-bottom {
+    .move-icon-wrap {
+      text-align: right;
+    }
+  }
+  &.left-top, &.left-bottom {
+    .move-icon-wrap {
+      text-align: left;
+    }
+  }
   /**
   * Map tools
   */
   .toolPane{
-    margin:$space/2 5px 0px 5px;
-    padding:5px 0px;
+    display: inline-block;
+    margin-top: $space/2;
+    padding:5px;
     @include border-radius($radius);
-    @include frontendContainerStyle();
 
-    & > li{margin:3px 0;}
-
-    .iconBig {
-      padding-left: 31px;
-      &:hover {
-        &:before {
-          @include opacityAlpha(1);
-        }
-      }
+    > li,
+    .zoomSlider > span,
+    .zoomSlider > ul {
+      margin:3px 0;
     }
-    
-  }
-  .historyPrev, .historyNext{margin-left:5px;}
-  .zoomBox{
-    text-align:center;
-    &.activeZoomIcon{
-      .iconZoom{@include opacity(1);}
+    .historyNext {
+      margin-left:5px;
     }
   }
-  .zoomWorld, .zoomSlider {
-    text-align: center;
+  .iconBig {
+    padding: 0;
+    margin: 0;
+    &:before {
+      padding: 0;
+      margin: 0;
+      position: static;
+    }
   }
-  .zoomSliderLevels {
-    margin: 0px;
+  .toolPane {
+    > li {
+      text-align: center;
+    }
   }
 
   .iconZoomLevel {
     font-size: 10px;
-    position: relative;
-    display: block;
-    margin-top: 0px;
-    margin-left: 15px;
     width: 10px;
     line-height: 10px;
-    height: 10px;
-    position: relative;
-    margin-bottom: 9px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
     &:not(:last-child):after {
-      position: absolute;
       content: "\f142";
       font-family: FontAwesome;
-      line-height: 10px;
       display: block;
-      //margin-bottom: -3px;
-      width: 3px;
-      text-align: left;
-      margin-left: 4px;
-
+      margin-bottom: -1px;
     }
   }
   
-  .iconZoomOut{
-      position: relative;
-      display:block;
-      height: 17px;
-      padding-left: 35px !important;
-      margin-top: 3px;
-  }
-}
-
-/**
-* TODO: this is a wrong place for this declaration!
-*/
-.olMapViewport{
-  &.MapbenderControlZoomBoxActive{cursor: crosshair;}
-  .olHandlerBoxZoomBox {
-    border: 2px solid $firstColor;
-    background-color: white;
-    @include opacity(.8);
-  }
 }

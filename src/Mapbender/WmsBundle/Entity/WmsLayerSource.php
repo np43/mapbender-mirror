@@ -153,6 +153,12 @@ class WmsLayerSource extends SourceItem implements ContainingKeyword
     protected $priority;
 
     /**
+     * @var ArrayCollection A list of layer instances
+     * @ORM\OneToMany(targetEntity="Mapbender\WmsBundle\Entity\WmsInstanceLayer",mappedBy="sourceItem", cascade={"remove"})
+     */
+    protected $instanceLayers;
+
+    /**
      * WmsLayerSource constructor.
      */
     public function __construct()
@@ -478,13 +484,11 @@ class WmsLayerSource extends SourceItem implements ContainingKeyword
      */
     public function getLatlonBounds($inherit = false)
     {
-//        //@TODO check layer inheritance if layer->latlonBounds === null
         if ($inherit && $this->latlonBounds === null && $this->getParent() !== null) {
-            return $this->getParent()->getLatlonBounds();
+            return $this->getParent()->getLatlonBounds($inherit);
         } else {
             return $this->latlonBounds;
         }
-//        return $this->latlonBounds;
     }
 
     /**
@@ -593,13 +597,14 @@ class WmsLayerSource extends SourceItem implements ContainingKeyword
     /**
      * Get styles incl. from parent WmsLayerSource (OGC WMS
      * Implemantation Specification)
+     * @param bool $inherit to also return style objects from parent layer(s)
      *
      * @return Style[]
      */
-    public function getStyles($inherit = true)
+    public function getStyles($inherit = false)
     {
-        if ($inherit && $this->getParent() !== null) { // add styles from parent
-            return array_merge($this->getParent()->getStyles(), $this->styles);
+        if ($inherit && $this->getParent() !== null) {
+            return array_merge($this->getParent()->getStyles(true), $this->styles);
         } else {
             return $this->styles;
         }

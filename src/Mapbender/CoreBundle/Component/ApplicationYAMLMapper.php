@@ -1,6 +1,7 @@
 <?php
 namespace Mapbender\CoreBundle\Component;
 
+use Mapbender\CoreBundle\Component\ElementBase\ConfigMigrationInterface;
 use Mapbender\CoreBundle\Component\Exception\ElementErrorException;
 use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Entity\Element;
@@ -123,6 +124,9 @@ class ApplicationYAMLMapper
             $weight = 0;
             foreach ($elementsDefinition ?: array() as $id => $elementDefinition) {
                 $element = $this->createElement($id, $region, $elementDefinition);
+                if (!$element) {
+                    continue;
+                }
                 $element->setWeight($weight++);
                 $element->setApplication($application);
                 $element->setYamlRoles(array_key_exists('roles', $elementDefinition) ? $elementDefinition['roles'] : array());
@@ -174,23 +178,26 @@ class ApplicationYAMLMapper
         $configuration = $elementDefinition;
         unset($configuration['class']);
         unset($configuration['title']);
-        $element = $this->getElementFactory()->newEntity($elementDefinition['class'], $region);
-        $element->setId($id);
         try {
+            $element = $this->getElementFactory()->newEntity($elementDefinition['class'], $region);
+            $element->setConfiguration($configuration);
+            $element->setId($id);
             $elComp = $this->getElementFactory()->componentFromEntity($element);
             $title = ArrayUtil::getDefault($elementDefinition, 'title', $elComp->getTitle());
             if ($elComp::$merge_configurations) {
-                $configuration = $elComp->mergeArrays($elComp->getDefaultConfiguration(), $configuration);
+                // Configuration may already have been modified once implicitly
+                /** @see ConfigMigrationInterface */
+                $configBefore = $element->getConfiguration();
+                $configAfter = $elComp->mergeArrays($elComp->getDefaultConfiguration(), $configBefore);
+                $element->setConfiguration($configAfter);
             }
+            $element->setTitle($title);
+            return $element;
         } catch (ElementErrorException $e) {
             // @todo: add strict mode support and throw if enabled
             $this->logger->warning("Your YAML application contains an invalid Elemenet {$elementDefinition['class']}: {$e->getMessage()}");
-            $title = ArrayUtil::getDefault($elementDefinition, 'title', '<missing title>');
+            return null;
         }
-
-        $element->setTitle($title);
-        $element->setConfiguration($configuration);
-        return $element;
     }
 
     /**
