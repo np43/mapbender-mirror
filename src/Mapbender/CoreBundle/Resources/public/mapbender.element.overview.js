@@ -30,11 +30,13 @@
             this.mbMap = $('#' + this.options.target).data('mapbenderMbMap');
 
             this.element.addClass(this.options.anchor);
+
+            this._initOverview();
+
             if (!this.options.maximized) {
                 this.element.addClass("closed");
-            } else {
-                this._initOverview();
             }
+
             $('.toggleOverview', this.element).on('click', $.proxy(this._openClose, this));
             this._trigger('ready');
         },
