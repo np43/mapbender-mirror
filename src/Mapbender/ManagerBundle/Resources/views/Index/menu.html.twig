@@ -2,41 +2,24 @@
   Copied into Mapbender from FOM v3.0.6.3
   see https://github.com/mapbender/fom/blob/v3.0.6.3/src/FOM/ManagerBundle/Resources/views/Manager/menu.html.twig
 #}
-<div class="sidebar-sticky">
-    <ul class="nav flex-column">
-  {% for k, item in menu %}
 
-    <li id="manager-{{ k }}" class="nav-item {% if item.active is defined %} activeItem {% endif %}">
-      <a class="nav-link" href="{{ path(item.route) }}">{{ item.title|trans }}</a>
-
-    {% if item.subroutes is defined and item.subroutes %}
-      <ul class="nav flex-column">
-
-        {% for item in item.subroutes %}
-          <li class="{% if item.active is defined and item.active %} activeItem {% endif %} nav-item">
-            <a{% if item.idx is defined %} id="{{ item.idx }}"{% endif %} class="nav-link" href="{{ path(item.route) }}">{{ item.title|trans }}</a>
-
+{% for k, item in menu %}
+    <li class="nav-item dropdown">
+        <a ahref=" {{ path(item.route) }} " class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">{{ item.title|trans }}</a>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href=" {{ path(item.route) }} " href="#">{{ item.title|trans }}</a>
             {% if item.subroutes is defined and item.subroutes %}
-              <ul class="nav flex-column">
-
                 {% for item in item.subroutes %}
-                  <li class="nav-item {% if item.active is defined and item.active %} activeItem {% endif %}">
-                    <a class="nav-link" href="{{ path(item.route) }}">{{ item.title|trans }}</a>
-                  </li>
+                    <a {% if item.idx is defined %} id="{{ item.idx }}" {% endif %} class="dropdown-item" href="{{ path(item.route) }}">{{ item.title|trans }}</a>
+                    {% if item.subroutes is defined and item.subroutes %}
+                        {% for item in item.subroutes %}
+                            <a class="dropdown-item" href="{{ path(item.route) }}">{{ item.title|trans }}</a>
+                        {% endfor %}
+                    {% endif %}
                 {% endfor %}
-
-              </ul>
             {% endif %}
-
-          </li>
-
-        {% endfor %}
-      </ul>
-        <hr>
-    {% endif %}
+        </div>
 
     </li>
-  {% endfor %}
-</ul>
 
-</div>
+{% endfor %}
