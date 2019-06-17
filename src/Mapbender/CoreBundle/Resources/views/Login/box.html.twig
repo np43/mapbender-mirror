@@ -1,6 +1,6 @@
 {% set application = {'slug': 'manager'} %}
 <!DOCTYPE html>
-<html class="no-js" lang="{{ app.request.locale }}">
+<html class="no-js h100" lang="{{ app.request.locale }}">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -36,17 +36,9 @@
             src="{{ path('mapbender_core_application_assets', {'slug': application.slug, 'type': 'js'}) }}"></script>
   {% endblock %}
 </head>
-<body class="{% if app.debug %}debug{% endif %}">
+<body class="h100">
 {% block content %}
-  <div class="authWrapper">
-    <div class="head">
-      <hr class="dekoSeperator">
-    </div>
-    <div class="login-wrapper">
-      <div class="logoContainer">
-        <a href="{{ path('mapbender_core_welcome_list') }}"><img class="logo" alt="Mapbender 3"
-                                                                 src="{{ asset(fom.server_logo) }}"/></a>
-      </div>
+  
       {% block box_content %}{% endblock %}
       {% set sitelinks = get_sitelinks() %}
       {% if sitelinks %}

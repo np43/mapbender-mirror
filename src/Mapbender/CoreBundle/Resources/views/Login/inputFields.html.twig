@@ -1,0 +1,53 @@
+<form action="{{ path("mapbender_core_login_logincheck") }}" method="post" id="login" novalidate="novalidate" class=" px-4 py-3">
+
+    <img alt="..." class="rounded mx-auto my-auto d-block " src="{{ asset("bundles/mapbendercore/image/logo_mb3.png")}}">
+
+
+    {% if error is defined and error %}
+        <div class="card border-danger my-3 "">
+           
+            <div class="card-body text-danger">
+
+                <p class="card-text">
+                    {% if error.message == "Bad credentials" %}
+                        {{ 'fom.user.login.errors.bad-credentials' | trans }}
+                    {% else %}
+                        {{ error.message | trans }}
+                    {% endif %}.</p>
+
+            </div>
+        </div>
+
+
+        <div class="messageBox error"></div>
+    {% endif %}
+
+
+    <div class="form-group">
+        <label for="username">{{ 'fom.user.login.login.username' | trans}}</label>
+        <input type="text" class="form-control" id="username" name="_username" placeholder="{{ 'fom.user.login.login.username' | trans}}" aria-describedby="inputGroupPrepend" required>
+
+
+    </div>
+
+
+    <div class="form-group">
+        <label for="DropdownFormPassword">{{ 'fom.user.login.login.password' | trans}}</label>
+        <input type="text" class="form-control" id="DropdownFormPassword" name="_password" placeholder="{{ 'fom.user.login.login.password' | trans}}" aria-describedby="inputGroupPrepend" required>
+
+
+    </div>
+    <input type="submit" class="btn btn-primary" value="{{ 'fom.user.login.login.login' | trans}}"/>
+
+    <div class="dropdown-divider"></div>
+
+
+    {% if selfregister is defined and selfregister == true %}
+        <a class="btn" href="{{ path('fom_user_registration_form') }}">{{ 'fom.user.login.login.register' | trans}}</a>
+    {% endif %}
+    {% if reset_password  is defined and reset_password == true %}
+        <a class="btn btn-error" href="{{ path('fom_user_password_form') }}">{{ 'fom.user.login.login.forgot_password' | trans}}?</a>
+    {% endif %}
+
+
+</div></form>
