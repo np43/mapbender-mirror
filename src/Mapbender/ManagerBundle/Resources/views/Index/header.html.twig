@@ -1,0 +1,31 @@
+<ul class="navbar-nav ml-auto">
+
+    <li class="nav-item dropdown active">
+        <a aria-expanded="false" aria-haspopup="true" href="#"  class="nav-link dropdown-toggle" data-toggle="dropdown"  id="navbarDropdownMenuLink">
+            {% if app.user != "" %}
+                <i class="fa fa-user"></i>
+                {{ "fom.core.manager.logged_as"|trans}}:
+                {{ app.user.username }}
+            {% else %}
+                Login
+
+            {% endif %}
+
+        </a>
+        <div aria-labelledby="navbarDropdownMenuLink" class="dropdown-menu dropdown-menu-right">
+            {% if app.user != "" %}
+
+                <a class="dropdown-item" href="{{ path('fom_user_user_edit', {'id': app.user.id}) }}">Test</a>
+                <a class="dropdown-item" href="{{ path('mapbender_core_login_logout') }}" target="_self" >
+
+                    <i class="fa fa-sign-out"></i>
+                    {{ "fom.core.manager.btn.logout"|trans }}</a>
+
+
+            {% else %}
+                {% include "MapbenderCoreBundle:Login:inputFields.html.twig" %}
+            {% endif %}
+
+        </div>
+    </li>
+</ul>

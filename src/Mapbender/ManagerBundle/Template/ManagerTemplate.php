@@ -18,9 +18,9 @@ class ManagerTemplate extends Template
 
     protected static $js = array(
         '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
-        '/components/vis-ui.js/vis-ui.js-built.js',
+        //'/components/vis-ui.js/vis-ui.js-built.js',
 
-        '@FOMCoreBundle/Resources/public/js/widgets/dropdown.js',
+        //'@FOMCoreBundle/Resources/public/js/widgets/dropdown.js',
         '@FOMCoreBundle/Resources/public/js/widgets/checkbox.js',
         '@FOMCoreBundle/Resources/public/js/widgets/radiobuttonExtended.js',
         '@FOMCoreBundle/Resources/public/js/components.js',
