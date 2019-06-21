@@ -1,11 +1,11 @@
-$(function() {
+$(function () {
     var popupCls = Mapbender.Popup;
     $("table.elementsTable tbody").sortable({
         connectWith: "table.elementsTable tbody",
         items: "tr:not(.dummy)",
         distance: 20,
-        stop: function(event, ui) {
-            $(ui.item).parent().find("tr.element").each(function(idx, elm) {
+        stop: function (event, ui) {
+            $(ui.item).parent().find("tr.element").each(function (idx, elm) {
                 if ($(elm).attr("data-href") === $(ui.item).attr("data-href")) {
                     $.ajax({
                         url: $(ui.item).attr("data-href"),
@@ -14,12 +14,12 @@ $(function() {
                             number: idx,
                             region: $(ui.item).closest('table').attr("data-region")
                         },
-                        success: function(data, textStatus, jqXHR) {
+                        success: function (data, textStatus, jqXHR) {
                             if (data.error && data.error !== '') {
                                 document.location.reload();
                             }
                         },
-                        error: function(jqXHR, textStatus, errorThrown) {
+                        error: function (jqXHR, textStatus, errorThrown) {
                             document.location.reload();
                         }
                     });
@@ -32,8 +32,8 @@ $(function() {
         connectWith: "table.layersetTable tbody",
         items: "tr:not(.header)",
         distance: 20,
-        stop: function(event, ui) {
-            $(ui.item).parent().find("tr").each(function(idx, elm) {
+        stop: function (event, ui) {
+            $(ui.item).parent().find("tr").each(function (idx, elm) {
                 if ($(elm).attr("data-id") === $(ui.item).attr("data-id")) {
                     $.ajax({
                         url: $(ui.item).attr("data-href"),
@@ -52,59 +52,31 @@ $(function() {
 
     function startEditElement(formUrl, strings, extraButtons) {
 
-        $.ajax(formUrl).then(function(response) {
-          /*  popup = new popupCls({
-                title: Mapbender.trans(strings.title || 'mb.manager.components.popup.edit_element.title'),
-                subTitle: strings.subTitle || '',
-                modal: true,
-                closeOnOutsideClick: true,
-                destroyOnClose: true,
-                cssClass: "elementPopup",
-                content: response,
-                buttons: (extraButtons || []).slice().concat([
-                    {
-                        label: Mapbender.trans(strings.save || 'mb.manager.components.popup.edit_element.btn.ok'),
-                        cssClass: 'btn btn-success',
-                        callback: function() {
+        $.ajax(formUrl).then(function (response) {
 
-                        }
-                    },
-                    {
-                        label: Mapbender.trans(strings.cancel || 'mb.manager.components.popup.edit_element.btn.cancel'),
-                        cssClass: 'button buttonCancel critical',
-                        callback: function() {
 
-                        }
-                    }
-                ])
-            }); */
-            $modalContent  = $('<div />').addClass("modal-content container");
-
-            $modalWrapper = $('<div />').addClass("modal bd-example-modal-lg fade modal-full");
-            $modalDialog  = $('<div />').addClass("container ");
-            $btns = $('<div />').addClass('form-group');
-            $btnOk = $('<button />')
+            var $modalDialog = $('<div />').addClass("container ");
+            var $btns = $('<div />').addClass('form-group');
+            var $btnOk = $('<button />')
                 .addClass('btn btn-success')
                 .text(Mapbender.trans(strings.title || 'mb.manager.components.popup.edit_element.title'))
-                .click(function(){
-                this.elementFormSubmit();
-            }.bind(this))
+                .click(function () {
+                    this.elementFormSubmit();
+                }.bind(this))
             ;
-            $btnCancel = $('<button />')
+            var $btnCancel = $('<button />')
                 .addClass('btn btn-warning')
                 .text(Mapbender.trans(strings.cancel || 'mb.manager.components.popup.edit_element.btn.cancel'))
-                .click(function(){
+                .click(function () {
                     $modalWrapper.modal('dispose');
-            }.bind(this))
+                }.bind(this))
             ;
             $btns.append($btnOk).append($btnCancel);
-            $dialogCtn = $(response);
-            $dialogCtn.append($btns);
-            $modalContent.append($dialogCtn);
-            $modalDialog.append($modalContent);
-            $modalWrapper.append($modalDialog);
-            $("body").append($modalWrapper);
-            $modalWrapper.modal();
+            var $dialogCtn = $(response).append($btns);
+
+
+            $modalDialog.append($dialogCtn).dialog();
+
             /*popup.$element.on('change', function(event) {
                 $('#elementForm', popup.$element).data('dirty', true);
             });
@@ -119,10 +91,10 @@ $(function() {
     }
 
     function startElementChooser(regionName, listUrl) {
-        var title ='mb.manager.components.popup.add_element.title';
+        var title = 'mb.manager.components.popup.add_element.title';
         $.ajax({
             url: listUrl
-        }).then(function(response) {
+        }).then(function (response) {
             popup = new popupCls({
                 title: Mapbender.trans(title),
                 subTitle: ' - ' + regionName,
@@ -135,13 +107,13 @@ $(function() {
                     {
                         label: Mapbender.trans("mb.manager.components.popup.add_element.btn.cancel"),
                         cssClass: 'button buttonCancel critical',
-                        callback: function() {
+                        callback: function () {
                             this.close();
                         }
                     }
                 ]
             });
-            popup.$element.on('click', '.chooseElement', function() {
+            popup.$element.on('click', '.chooseElement', function () {
                 var elTypeSubtitle = $('.subTitle', this).first().text();
                 var editStrings = {
                     title: title,
@@ -154,7 +126,7 @@ $(function() {
                     {
                         label: Mapbender.trans("mb.manager.components.popup.add_element.btn.back"),
                         cssClass: 'button buttonBack',
-                        callback: function() {
+                        callback: function () {
                             startElementChooser(regionName, listUrl);
                         }
                     }
@@ -164,13 +136,13 @@ $(function() {
         });
     }
 
-    $(".addElement").bind("click", function(event) {
+    $(".addElement").bind("click", function (event) {
         var regionName = $('.subTitle', $(this).closest('.region')).first().text();
         startElementChooser(regionName, $(this).attr('href'));
         return false;
     });
 
-    $(".editElement").bind("click", function() {
+    $(".editElement").bind("click", function () {
         startEditElement($(this).attr('data-url'), {});
         return false;
     });
@@ -188,9 +160,9 @@ $(function() {
             error: function (e, statusCode, message) {
                 Mapbender.error(Mapbender.trans("mb.application.save.failure.general") + ' ' + message);
             },
-            success: function(data) {
+            success: function (data) {
                 if (data.length > 0) {
-                    $form.parent().html( data );
+                    $form.parent().html(data);
                 } else {
                     $form.data('dirty', false);
                     self.close();
@@ -201,12 +173,12 @@ $(function() {
     }
 
     // Element security
-    $(".secureElement").bind("click", function() {
+    $(".secureElement").bind("click", function () {
         var self = $(this),
-                toremove = null;
+            toremove = null;
         $.ajax({
             url: self.attr("data-url")
-        }).then(function(response) {
+        }).then(function (response) {
             popup = new popupCls({
                 title: "Secure element",
                 closeOnOutsideClick: true,
@@ -215,7 +187,7 @@ $(function() {
                     {
                         label: Mapbender.trans('mb.manager.components.popup.element_acl.btn.back'), //Mapbender.trans("mb.wmc.element.wmceditor.popup.btn.back"),
                         cssClass: 'button buttonBack hidden left',
-                        callback: function() {
+                        callback: function () {
                             toremove = null;
                             $(".contentItem:first", popup.$element).removeClass('hidden');
                             if ($(".contentItem", popup.$element).length > 1) {
@@ -228,7 +200,7 @@ $(function() {
                     {
                         label: Mapbender.trans('mb.manager.components.popup.element_acl.btn.remove'), //Mapbender.trans("mb.wmc.element.wmceditor.popup.btn.back"),
                         cssClass: 'button buttonRemove hidden',
-                        callback: function() {
+                        callback: function () {
                             $(".contentItem:first", popup.$element).removeClass('hidden');
                             if (toremove !== null) {
                                 toremove.remove();
@@ -244,7 +216,7 @@ $(function() {
                     {
                         label: Mapbender.trans('mb.manager.components.popup.element_acl.btn.add'), //Mapbender.trans("mb.wmc.element.wmceditor.popup.btn.back"),
                         cssClass: 'button buttonAdd hidden',
-                        callback: function() {
+                        callback: function () {
                             toremove = null;
                             $(".contentItem:first", popup.$element).removeClass('hidden');
                             if ($(".contentItem", popup.$element).length > 1) {
@@ -255,21 +227,21 @@ $(function() {
                                     var count = body.find("tr").length;
                                     var text, val, newEl;
 
-                                    $('#listFilterGroupsAndUsers input[type="checkbox"]:checked', popup.$element).each(function() {
+                                    $('#listFilterGroupsAndUsers input[type="checkbox"]:checked', popup.$element).each(function () {
                                         var $row = $(this).closest('tr');
                                         var userType = $('.tdContentWrapper', $row).hasClass("iconGroup") ? "iconGroup" : "iconUser";
                                         text = $row.find(".labelInput").text().trim();
                                         val = $row.find(".hide").text().trim();
                                         newEl = body.prepend(proto.replace(/__name__/g, count))
-                                                .find("tr:first");
+                                            .find("tr:first");
 
                                         newEl.addClass("new").find(".labelInput").text(text);
                                         newEl.find(".input").attr("value", val);
                                         newEl.find(".view.checkWrapper").trigger("click");
                                         newEl.find(".userType")
-                                                .removeClass("iconGroup")
-                                                .removeClass("iconUser")
-                                                .addClass(userType);
+                                            .removeClass("iconGroup")
+                                            .removeClass("iconUser")
+                                            .addClass(userType);
                                         ++count;
                                     });
                                 }
@@ -285,10 +257,10 @@ $(function() {
                     {
                         label: Mapbender.trans('mb.manager.components.popup.element_acl.btn.ok'),
                         cssClass: 'button buttonOk',
-                        callback: function() {
+                        callback: function () {
                             toremove = null;
                             $("#elementSecurity", popup.$element).submit();
-                            window.setTimeout(function() {
+                            window.setTimeout(function () {
                                 window.location.reload();
                             }, 50);
                         }
@@ -296,14 +268,14 @@ $(function() {
                     {
                         label: Mapbender.trans('mb.manager.components.popup.element_acl.btn.cancel'),
                         cssClass: 'button buttonCancel critical',
-                        callback: function() {
+                        callback: function () {
                             toremove = null;
                             this.close();
                         }
                     }
                 ]
             });
-            $('#addElmPermission', popup.$element).on('click', function(e) {
+            $('#addElmPermission', popup.$element).on('click', function (e) {
                 var $anchor = $(this);
                 var url = $anchor.attr('data-href') || $anchor.attr('href');
                 e.preventDefault();
@@ -311,23 +283,23 @@ $(function() {
                 $.ajax({
                     url: url,
                     type: "GET",
-                    success: function(data, textStatus, jqXHR) {
+                    success: function (data, textStatus, jqXHR) {
                         $(".contentItem:first,.buttonOk", popup.$element).addClass('hidden');
                         $(".buttonAdd,.buttonBack", popup.$element).removeClass('hidden');
                         popup.addContent(data);
                         var groupUserItem, text, me, groupUserType;
 
-                        $("#listFilterGroupsAndUsers", popup.$element).find(".filterItem").each(function(i, e) {
+                        $("#listFilterGroupsAndUsers", popup.$element).find(".filterItem").each(function (i, e) {
 
                             groupUserItem = $(e);
                             groupUserType = (groupUserItem.find(".tdContentWrapper")
-                                    .hasClass("iconGroup") ? "iconGroup"
-                                    : "iconUser");
-                            $("#permissionsBody", popup.$element).find(".labelInput").each(function(i, e) {
+                                .hasClass("iconGroup") ? "iconGroup"
+                                : "iconUser");
+                            $("#permissionsBody", popup.$element).find(".labelInput").each(function (i, e) {
                                 me = $(e);
                                 text = me.text().trim();
                                 if ((groupUserItem.text().trim().toUpperCase().indexOf(text.toUpperCase()) >= 0) &&
-                                        (me.parent().hasClass(groupUserType))) {
+                                    (me.parent().hasClass(groupUserType))) {
                                     groupUserItem.remove();
                                 }
                             });
@@ -336,7 +308,7 @@ $(function() {
                 });
                 return false;
             });
-            $("#permissionsBody", popup.$element).on("click", '.iconRemove', function(e) {
+            $("#permissionsBody", popup.$element).on("click", '.iconRemove', function (e) {
                 var self = $(e.target);
                 var parent = self.parent().parent();
                 var userGroup = ((parent.find(".iconUser").length == 1) ? "user " : "group ") + parent.find(".labelInput").text();
@@ -350,7 +322,7 @@ $(function() {
     });
 
     // Delete element
-    $('.removeElement').bind("click", function() {
+    $('.removeElement').bind("click", function () {
         var $el = $(this);
         popup = Mapbender.Manager.confirmDelete($el, $el.attr('data-url'), {
             title: 'mb.manager.components.popup.delete_element.title',
@@ -366,8 +338,8 @@ $(function() {
         var self = $(this);
         var isEdit = self.hasClass("editLayerset");
         var popupTitle = isEdit ? "mb.manager.components.popup.add_edit_layerset.title_edit"
-                                : "mb.manager.components.popup.add_edit_layerset.title_add";
-        $.ajax({url: self.attr("href")}).then(function(html) {
+            : "mb.manager.components.popup.add_edit_layerset.title_add";
+        $.ajax({url: self.attr("href")}).then(function (html) {
             popup = new popupCls({
                 title: Mapbender.trans(popupTitle),
                 closeOnOutsideClick: true,
@@ -377,14 +349,14 @@ $(function() {
                     {
                         label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.ok"),
                         cssClass: 'button',
-                        callback: function() {
+                        callback: function () {
                             $("#layersetForm").submit();
                         }
                     },
                     {
                         label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.cancel"),
                         cssClass: 'button buttonCancel critical',
-                        callback: function() {
+                        callback: function () {
                             this.close();
                         }
                     }
@@ -399,7 +371,7 @@ $(function() {
     // Edit layerset action
     $(".editLayerset").bind("click", addOrEditLayerset);
     // Delete layerset Action
-    $(".removeLayerset").bind("click", function() {
+    $(".removeLayerset").bind("click", function () {
         var strings = {
             title: 'mb.manager.components.popup.delete_layerset.title',
             confirm: 'mb.manager.components.popup.delete_layerset.btn.ok',
@@ -407,13 +379,13 @@ $(function() {
         };
         var $el = $(this);
         var actionUrl = $el.attr('href');
-        $.ajax({url: actionUrl}).then(function(content) {
+        $.ajax({url: actionUrl}).then(function (content) {
             popup = Mapbender.Manager.confirmDelete($el, actionUrl, strings, content);
         });
         return false;
     });
     // Add Instance Action
-    $(".addInstance").bind("click", function(event) {
+    $(".addInstance").bind("click", function (event) {
         var self = $(this);
         var layersetTitle = self.closest('.filterItem', '.listFilterContainer').find('.subTitle').first().text();
         if (popup) {
@@ -431,7 +403,7 @@ $(function() {
                 'cancel': {
                     label: Mapbender.trans("mb.manager.components.popup.add_instance.btn.cancel"),
                     cssClass: 'button buttonCancel critical right',
-                    callback: function() {
+                    callback: function () {
                         this.close();
                     }
                 }
@@ -440,7 +412,7 @@ $(function() {
         return false;
     });
     // Delete instance
-    $('.removeInstance').bind("click", function() {
+    $('.removeInstance').bind("click", function () {
         var $el = $(this);
         popup = Mapbender.Manager.confirmDelete($el, $el.attr('data-url'), {
             title: 'mb.manager.components.popup.delete_instance.title',
@@ -462,21 +434,21 @@ $(function() {
     var minHeight = applicationForm.find('#application_screenshotHeight').val();
     var uploadScreenShot = applicationForm.find('#application_uploadScreenShot');
 
-    
-    fileInput.on('mouseover', function() {
+
+    fileInput.on('mouseover', function () {
         uploadButton.addClass('hover');
-    }).on('mouseout', function() {
+    }).on('mouseout', function () {
         uploadButton.removeClass('hover');
-    }).on('change', function(e) {
-        setUploadFilename(e);  
+    }).on('change', function (e) {
+        setUploadFilename(e);
 
         var file = this.files;
         var reader = new FileReader();
         var img = new Image();
         var src = "";
         var validationMessage;
-        
-        img.onload = function() {
+
+        img.onload = function () {
             if (img.width >= minWidth && img.height >= minHeight) {
                 validationMsgBox.addClass('hidden');
                 screenShotImg.attr('src', src);
@@ -488,37 +460,45 @@ $(function() {
             } else {
                 uploadScreenShot.val(1);
                 validationMessage = Mapbender.trans('mb.core.entity.app.screenshotfile.resolution.error',
-                    {'screenshotWidth':minWidth, 'screenshotHeight':minHeight ,'uploadWidth': img.width, 'uploadHeighth': img.height });
+                    {
+                        'screenshotWidth': minWidth,
+                        'screenshotHeight': minHeight,
+                        'uploadWidth': img.width,
+                        'uploadHeighth': img.height
+                    });
                 validationMsgBox.text(validationMessage);
                 validationMsgBox.removeClass('hidden');
             }
         };
 
-         if (file && file[0]) {
-            if (file[0].type.match('image/')){
+        if (file && file[0]) {
+            if (file[0].type.match('image/')) {
                 if (file[0].size <= 2097152) {
-                   
+
                     reader.onload = function (e) {
                         img.src = src = e.target.result;
                     };
 
                     reader.readAsDataURL(file[0]);
-                    
-                }else{
+
+                } else {
                     var uploadFileSize = file[0].size;
-                    validationMessage = Mapbender.trans('mb.core.entity.app.screenshotfile.error', {'maxFileSize':maxFileSize, 'uploadFileSize': uploadFileSize });
+                    validationMessage = Mapbender.trans('mb.core.entity.app.screenshotfile.error', {
+                        'maxFileSize': maxFileSize,
+                        'uploadFileSize': uploadFileSize
+                    });
                     validationMsgBox.text(validationMessage);
                     validationMsgBox.removeClass('hidden');
                 }
-             }else {
-                 validationMessage = Mapbender.trans('mb.core.entity.app.screenshotfile.format_error');
-                 validationMsgBox.removeClass('hidden');
+            } else {
+                validationMessage = Mapbender.trans('mb.core.entity.app.screenshotfile.format_error');
+                validationMsgBox.removeClass('hidden');
             }
         }
-        
+
     });
-   
-    var setUploadFilename = function(e){
+
+    var setUploadFilename = function (e) {
         var fileName = $(e.currentTarget).val().replace(/^.+(\\)/, '');
         var displayFilename = fileName || Mapbender.trans('mb.manager.admin.application.upload.label');
         if (displayFilename.length > 35) {
@@ -527,57 +507,59 @@ $(function() {
             $('.upload_label').text(displayFilename);
         }
     };
-    
-    var deleteScreenShotButtonInit = function() {
-           
+
+    var deleteScreenShotButtonInit = function () {
+
         var deleteButton = screenShot.find('.delete');
-        screenShot.hover(function() {
+        screenShot.hover(function () {
             deleteButton.toggleClass('hidden', $(this).hasClass('default'));
-        }, function() {
+        }, function () {
             deleteButton.addClass('hidden');
         });
 
-        deleteButton.on('click', function() {
+        deleteButton.on('click', function () {
             screenShot.addClass('default');
-            screenShotImg.attr('src',"");
+            screenShotImg.attr('src', "");
             applicationForm.find('.upload_label').html(Mapbender.trans("mb.manager.upload.label_delete"));
             applicationForm.find('input[name="application[removeScreenShot]"]').val(1);
             deleteButton.addClass('hidden');
         });
         return deleteButton;
     };
-    
+
     deleteScreenShotButtonInit();
-    
-    $(document).ready(function() {
-        $('.application-component-table tbody .iconColumn input.checkbox[data-url]').each(function() {
-            var self = this;
-            initCheckbox.call(this);
-            $(self).on("change", function(e) {
+
+    $(document).ready(function () {
+        $('.application-component-table tbody .-fn-application-visibility').each(function (ind, element) {
+
+            var isActive = $(element).data('state') === "active";
+
+            $(element).click(function (e) {
                 $.ajax({
-                    url: $(self).attr('data-url'),
+                    url: $(element).data('url'),
                     type: 'POST',
                     data: {
-                        'id': $(self).attr('data-id'),
-                        'enabled': $(self).is(":checked")
-                    },
-                    success: function(data) {
-                        if (data.success) {
-                            if (data.success.enabled.after !== $(self).is(":checked"))
-                                alert("Cannot be changed!");
-                        } else if (data.error) {
-                            alert(data.error);
-                        }
+                        'id': $(element).data('id'),
+                        'enabled': isActive
                     }
-                });
+                })
+                    .done(function (data) {
+                        if (data.success) {
+                            data.success.enabled.after ? $(element).addClass('fa-eye').removeClass("fa-eye-slash") : $(element).removeClass('fa-eye').addClass("fa-eye-slash");
+
+                        } else if (data.error) {
+                            $.notify(data.error);
+                        }
+
+                    });
             });
         });
     });
 
-    // Custom CSS editor
-    (function($) {
+// Custom CSS editor
+    (function ($) {
         var textarea = $('#application_custom_css');
-        if(!textarea.length) return;
+        if (!textarea.length) return;
         codeMirror = CodeMirror.fromTextArea(textarea[0], {
             mode: 'css',
             keyMap: 'sublime',
@@ -591,26 +573,27 @@ $(function() {
             theme: 'neo'
         });
 
-        codeMirror.on('change', function() {
+        codeMirror.on('change', function () {
             codeMirror.save();
         });
 
-        $('#tabCustomCss').on('click', function() {
+        $('#tabCustomCss').on('click', function () {
             codeMirror.refresh();
             codeMirror.focus();
         });
     })(jQuery);
-    (function($) {
+    (function ($) {
         var tabkey = 'manager_active_tab';
-        if (typeof(Storage) !== "undefined" && window.sessionStorage && window.sessionStorage[tabkey]) {
+        if (typeof (Storage) !== "undefined" && window.sessionStorage && window.sessionStorage[tabkey]) {
             var id = window.sessionStorage[tabkey];
             $(".tabContainer .tab#" + id + ", .tabContainerAlt .tab#" + id).click();
         }
-        $(".tabContainer, .tabContainerAlt").on('click', '.tab', function() {
-            if (typeof(Storage) !== "undefined" && window.sessionStorage) {
+        $(".tabContainer, .tabContainerAlt").on('click', '.tab', function () {
+            if (typeof (Storage) !== "undefined" && window.sessionStorage) {
                 window.sessionStorage.setItem(tabkey, $(this).attr('id'));
             }
         });
     })(jQuery);
-});
+})
+;
 
