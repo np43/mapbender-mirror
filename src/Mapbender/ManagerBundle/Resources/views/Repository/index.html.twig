@@ -2,72 +2,79 @@
 
 {% block title %}{{ 'mb.manager.admin.sources' | trans }}{% endblock %}
 
-{% block css %}
-  {{parent()}}
-{% endblock %}
+
 
 {% block js %}
-  {{parent()}}
-  <script type="text/javascript" src="{{ asset('bundles/mapbendermanager/js/service-list.js') }}"></script>
+    {{ parent() }}
+    <script type="text/javascript" src="{{ asset('bundles/mapbendermanager/js/service-list.js') }}"></script>
 {% endblock %}
 
 {% block manager_content %}
-{% if create_permission %}
-<a class="iconAdd iconBig right" href="{{ path("mapbender_manager_repository_new") }}" title="{{ 'mb.manager.admin.source.add' | trans }}"></a>
-{% endif %}
-{% if sources|length > 0 %}
+
+    {% if create_permission %}
+        <a class="iconAdd iconBig right" href="{{ path("mapbender_manager_repository_new") }}"
+           title="{{ 'mb.manager.admin.source.add' | trans }}"></a>
+    {% endif %}
+    {% if sources|length > 0 %}
 
 
-        <table id="-fn-sources-table" class="table">
-            <caption>List of sources</caption>
+        <table id="-fn-sources-table" class="table table-striped ﬂ">
+
             <thead>
             <tr>
-                <th scope="col">Id</th>
-                <th scope="col">Type</th>
-                <th scope="col">Valid</th>
-                <th scope="col">description</th>
-                <th scope="col">Details</th>
-                <th scope="col">Actions</th>
+                <td>Id</td>
+                <td>Type</td>
+                <td>description</td>
+                <td>Details</td>
+                <td>Actions</td>
 
             </tr>
             </thead>
 
             <tbody>
             {% for source in sources %}
-               <tr>
-                   <td>{{ source.id }}</td>
-                   <td>{{ source.type }}</td>
-                   <td> {% if source.valid == true %}
-                           <span class="iconStarO icon" title="{{"mb.manager.admin.source.valid"|trans}}"></span><br>
-                       {% elseif source.valid is not null %}
-                           <span class="iconWarningSmpl icon" title="{{"mb.manager.admin.source.notvalid"|trans}}"></span><br>
-                       {% endif %}
-                   </td>
 
+                <tr>
+                    <td>{{ source.id }}</td>
+                    <td>{{ source.type }}</td>
+                    <td>{{ source.description }}</td>
 
-            <td>{{ source.description }}</td>
+                    <td>
+                        {% if usedInApplication[source.id] is defined %}
+                            <ul class="list-unstyled">
+                                {% for application in usedInApplication[source.id] %}
+                                    <li><a href="">{{ application.title }}</a></li>
+                                {% endfor %}
+                            </ul>
 
-            <td><a href="{{ path("mapbender_manager_repository_view",{"sourceId":source.id}) }}" class="title">{{ source.title }}<span class="smallerText"> {{ source.alias }}</span></a></td>
-            <td><div class="buttonGroup">
-                    <a class="iconView hover-highlight-effect" href="{{ path("mapbender_manager_repository_view",{"sourceId":source.id}) }}" title="{{ 'mb.manager.admin.source.show_metadata' | trans }}"></a>
-                    {% if is_granted('EDIT', oid) or is_granted('EDIT', source) %}
-                        <a class="iconReset hover-highlight-effect" href="{{ path("mapbender_manager_repository_updateform",{"sourceId":source.id}) }}" title="{{ 'mb.manager.admin.source.update' | trans }} {{ source.title }}"></a>
-                    {% endif %}
-                    {% if is_granted('DELETE', oid) or is_granted('DELETE', source) %}
-                        <span class="iconRemove hover-highlight-effect"
-                              title="{{"mb.manager.admin.source.delete"|trans}} {{ source.title }}"
-                              data-url="{{ path("mapbender_manager_repository_confirmdelete",{"sourceId":source.id}) }}"
-                              data-id="{{ source.id }}"></span>
-                    {% endif %}
-                </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="form-inline">
+                            <a class="iconView hover-highlight-effect"
+                               href="{{ path("mapbender_manager_repository_view",{"sourceId":source.id}) }}"
+                               title="{{ 'mb.manager.admin.source.show_metadata' | trans }}"></a>
+                            {% if is_granted('EDIT', oid) or is_granted('EDIT', source) %}
+                                <a class="iconReset hover-highlight-effect"
+                                   href="{{ path("mapbender_manager_repository_updateform",{"sourceId":source.id}) }}"
+                                   title="{{ 'mb.manager.admin.source.update' | trans }} {{ source.title }}"></a>
+                            {% endif %}
+                            {% if is_granted('DELETE', oid) or is_granted('DELETE', source) %}
+                                <span class="iconRemove hover-highlight-effect"
+                                      title="{{ "mb.manager.admin.source.delete"|trans }} {{ source.title }}"
+                                      data-url="{{ path("mapbender_manager_repository_confirmdelete",{"sourceId":source.id}) }}"
+                                      data-id="{{ source.id }}"></span>
+                            {% endif %}
+                        </div>
+                    </td>
 
-</tr>
+                </tr>
 
-                {% else %}
-                    <li class="description">{{ 'mb.manager.admin.source.no_source' | trans }}</li>
-                {% endfor %}
-            </td>
-        </tbody>
+            {% else %}
+                <li class="description">{{ 'mb.manager.admin.source.no_source' | trans }}</li>
+            {% endfor %}
+
+            </tbody>
         </table>
 
 
@@ -76,5 +83,11 @@
 
 
 
-{% endif %}
+    {% endif %}
+
+    <script>
+        window.onload = function () {
+          $('#-fn-sources-table').DataTable();
+        }
+    </script>
 {% endblock %}

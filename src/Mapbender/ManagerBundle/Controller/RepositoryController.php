@@ -1,11 +1,13 @@
 <?php
 namespace Mapbender\ManagerBundle\Controller;
 
+use Mapbender\CoreBundle\Entity\Application;
 use Mapbender\CoreBundle\Mapbender;
 use Doctrine\ORM\EntityRepository;
 use Mapbender\CoreBundle\Entity\Layerset;
 use Mapbender\CoreBundle\Entity\SourceInstance;
 use Mapbender\ManagerBundle\Utils\WeightSortedCollectionUtil;
+use Mapbender\CoreBundle\Entity\Source;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use FOM\ManagerBundle\Configuration\Route as ManagerRoute;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,21 +34,38 @@ class RepositoryController extends Controller
      */
     public function indexAction($page)
     {
-        $oid = new ObjectIdentity('class', 'Mapbender\CoreBundle\Entity\Source');
-        $repository = $this->getDoctrine()->getRepository('Mapbender\CoreBundle\Entity\Source');
+        
+        $oid = new ObjectIdentity('class', Source::class);
+        $repository = $this->getDoctrine()->getRepository(Source::class);
+        $applcationRepository = $this->getDoctrine()->getRepository(Application::class);
         $sources = $repository->findBy(array(), array('id' => 'ASC'));
 
-        $allowed_sources = array();
+        $allowedSources = [];
+        $usedInApplication = [];
+        /** @var $source Mapbender\CoreBundle\Entity\Source **/
         foreach ($sources as $source) {
-            if (!$this->isGranted('VIEW', $oid) && !$this->isGranted('VIEW', $source)) {
-                continue;
+            if ($this->isGranted('VIEW', $oid) && $this->isGranted('VIEW', $source)) {
+                $sourceId = $source->getId();
+                $applications = $applcationRepository->findBySourceId($sourceId);
+                $allowedSources[] = $source;
+                foreach($applications as $application) {
+                    $usedInApplication[$sourceId][] = array(
+                        'title' => $application->getTitle(),
+                        'slug' => $application->getSlug(),
+                    )
+                    ;
+                }
+                
             }
-            $allowed_sources[] = $source;
+            
+           
+            
         }
-
+        
         return $this->render('@MapbenderManager/Repository/index.html.twig', array(
             'title' => 'Repository',
-            'sources' => $allowed_sources,
+            'sources' => $allowedSources,
+            'usedInApplication' => $usedInApplication,
             'oid' => $oid,
             'create_permission' => $this->isGranted('CREATE', $oid),
         ));

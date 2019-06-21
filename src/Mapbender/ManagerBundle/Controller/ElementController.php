@@ -431,7 +431,7 @@ class ElementController extends Controller
 
         } else {
             $enabled_before = $element->getEnabled();
-            $enabled = $enabled === "true" ? true : false;
+            $enabled = !$enabled_before;
             $element->setEnabled($enabled);
             $em = $this->getDoctrine()->getManager();
             $em->persist($element->getApplication()->setUpdated(new \DateTime('now')));

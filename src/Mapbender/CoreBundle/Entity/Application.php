@@ -24,6 +24,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * @ORM\Entity
  * @ORM\Table(name="mb_core_application")
  * @ORM\HasLifecycleCallbacks
+ * @ORM\Entity(repositoryClass="ApplicationRepository")
  */
 class Application
 {
