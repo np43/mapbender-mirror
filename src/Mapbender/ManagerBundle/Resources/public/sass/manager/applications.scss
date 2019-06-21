@@ -12,25 +12,9 @@
 @import "bundles/mapbendermanager/sass/manager/user_control.scss";
 
 
-.sidebar {
-    position: relative;
-    top: 0;
-    height: calc(100vh - 48px);
-    padding-top: 52px;
-    overflow-x: hidden;
-    overflow-y: hidden;
-}
-.sidebar-sticky {
-    position: sticky;
-    position: -webkit-sticky;
-    top: 0;
-    height: 100%;
-    padding-top: .5rem;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
+
 
 
 .content {
-    padding-top: 52px;
+    padding-top: 60px;
 }

@@ -1,27 +1,32 @@
 {% extends "MapbenderCoreBundle::index.html.twig" %}
 {% block css %}
-    <link rel="stylesheet" href="{{ path('mapbender_core_application_assets', {'slug': 'mb3-login', 'type': 'css'}) }}"/>
+    <link rel="stylesheet"
+          href="{{ path('mapbender_core_application_assets', {'slug': 'mb3-login', 'type': 'css'}) }}"/>
     <link rel="stylesheet" type="text/css" href="{{ asset('components/cookieconsent/build/cookieconsent.min.css') }}"/>
 {% endblock %}
 
 {% block title %}
-    {{ 'fom.user.login.login.title' | trans}}
+    {{ 'fom.user.login.login.title' | trans }}
 {% endblock %}
 
 {% block content %}
     <div class="container-fluid no-gutters h100">
         <div class="row h100">
             <div class="col-md-9 bg-dark">
-                <img alt="..." class="rounded mx-auto my-auto d-block w100 h100 " src="{{ asset("bundles/mapbendercore/image/Continents.svg")}}">
+                <img alt="..." class="rounded mx-auto my-auto d-block w100 h100 "
+                     src="{{ asset("bundles/mapbendercore/image/Continents.svg") }}">
 
             </div>
 
 
             <div class="col-md-3">
-                <img alt="..." class="rounded mx-auto my-auto d-block " src="{{ asset("bundles/mapbendercore/image/logo_mb3.png")}}">
+                <div class="my-auto">
+                    <img alt="..." class="rounded m-auto  d-block "
+                         src="{{ asset("bundles/mapbendercore/image/logo_mb3.png") }}">
 
 
-                {% include "MapbenderCoreBundle:Login:inputFields.html.twig" %}
+                    {% include "MapbenderCoreBundle:Login:inputFields.html.twig" %}
+                </div>
             </div>
         </div>
     </div>
