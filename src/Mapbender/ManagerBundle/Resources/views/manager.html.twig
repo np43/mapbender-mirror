@@ -1,9 +1,9 @@
 {% extends "MapbenderCoreBundle::index.html.twig" %}
 
 {% set title %}
-{% block title %}
-    {{ title|default('') }}
-{% endblock %}
+    {% block title %}
+        {{ title|default('') }}
+    {% endblock %}
 {% endset %}
 
 {% block favicon %}
@@ -15,9 +15,11 @@
 {% endblock %}
 
 {% block js %}
-    {{parent()}}
-    <script type="text/javascript" src="{{ path('mapbender_core_application_assets', {'slug': 'manager','type': 'js'}) }}"></script>
-    <script type="text/javascript" src="{{ path('mapbender_core_application_assets', {'slug': 'manager','type': 'trans'}) }}"></script>
+    {{ parent() }}
+    <script type="text/javascript"
+            src="{{ path('mapbender_core_application_assets', {'slug': 'manager','type': 'js'}) }}"></script>
+    <script type="text/javascript"
+            src="{{ path('mapbender_core_application_assets', {'slug': 'manager','type': 'trans'}) }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -30,15 +32,15 @@
     </nav>
 
 
-    <div class="container-fluid pt-2" id="container">
+    <div class="container-fluid content" id="container">
 
         <div class="row">
-            <div class="col">
-                <div class="container-fluid ">
-                    {% block manager_content %}{% endblock %}
-                </div>
+
+            <div class="container-fluid ">
+                {% block manager_content %}{% endblock %}
             </div>
         </div>
+
     </div>
 
 
