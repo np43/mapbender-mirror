@@ -1,14 +1,13 @@
 $(function(){
     var popup;
 
-    $(".checkbox").on("change", function(e){
-      $("#selectedUsersGroups").text(($(".tableUserGroups").find(".iconCheckboxActive").length))
+    $(".checkbox").on("change", function(){
+      $("#selectedUsersGroups").text(($(".tableUserGroups").find(".iconCheckboxActive").length));
     });
-
-    // Delete group via Ajax
-    $('#listFilterGroups').on("click", ".iconRemove", function(){
-        var self  = $(this);
-        var content = self.attr('title');
+    var showConfirmationDialog = function(){
+        var $this  = $(this);
+        var subtitle = $this.attr("id") === "#listFilterGroups" ? Mapbender.trans("fom.user.dialog.group") :  Mapbender.trans("fom.user.dialog.user")  ;
+        var content = $this.attr("title");
 
 
         if(popup){
@@ -16,78 +15,36 @@ $(function(){
         }
 
         popup = new Mapbender.Popup2({
-            title:"Confirm delete",
-            subtitle: " - group",
+            title: Mapbender.trans("fom.user.dialog.title"),
+            subtitle: subtitle,
             closeOnOutsideClick: true,
             content: [content + "?"],
             buttons: {
-                'cancel': {
-                    label: 'Cancel',
-                    cssClass: 'button buttonCancel critical right',
-                    callback: function() {
-                        this.close();
-                    }
+                "cancel": {
+                    label: Mapbender.trans("fom.user.dialog.cancel"),
+                    cssClass: "btn btn-critical float-right",
+                    callback:  this.close
                 },
-                'delete': {
-                    label: 'Delete',
-                    cssClass: 'button right',
+                "delete": {
+                    label: Mapbender.trans("fom.user.dialog.delete"),
+                    cssClass: "btn btn-success float-right",
                     callback: function() {
                         $.ajax({
-                        url: self.attr('data-url'),
-                        data : {'id': self.attr('data-id')},
-                        type: 'POST',
-                        success: function(data) {
-                                window.location.reload();
-                            }
-                        });
+                            url: $this.data("url"),
+                            data : {"id": $this.data("id")},
+                            type: "POST"
+
+                        }).done(window.location.reload);
                     }
                 }
             }
         });
         return false;
-    });
 
-    // Delete user via Ajax
-    $('#listFilterUsers').on("click", ".iconRemove", function(){
-        var self  = $(this);
-        var content = self.attr('title');
+    };
+    // Delete group/user via Ajax
+    $("#listFilterGroups #listFilterUsers").on("click", ".-fn-delete",showConfirmationDialog.bind(this) );
 
 
-        if(popup){
-            popup = popup.destroy();
-        }
 
-        popup = new Mapbender.Popup2({
-            title:"Confirm delete",
-            subtitle: " - user",
-            closeOnOutsideClick: true,
-            content: [content + "?"],
-            buttons: {
-                'cancel': {
-                    label: 'Cancel',
-                    cssClass: 'button buttonCancel critical right',
-                    callback: function() {
-                        this.close();
-                    }
-                },
-                'delete': {
-                    label: 'Delete',
-                    cssClass: 'button right',
-                    callback: function() {
-                        $.ajax({
-                            url: self.attr('data-url'),
-                            data : {
-                                'slug': self.attr('data-slug'),
-                                'id': self.attr('data-id')
-                            },
-                            type: 'POST',
-                            success: function(data) {
-                                window.location.reload();
-                            }
-                        });
-                    }
-                }
-            }
-        });
-    });
 });
