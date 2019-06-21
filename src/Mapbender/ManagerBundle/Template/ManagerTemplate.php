@@ -13,20 +13,18 @@ class ManagerTemplate extends Template
 {
     protected static $css = array(
         '@MapbenderManagerBundle/Resources/public/sass/manager/applications.scss',
-        '/../vendor/twbs/bootstrap/dist/css/bootstrap.css'
+        '/components/jquery-ui/themes/base/jquery-ui.css',
+        '/../vendor/twbs/bootstrap/dist/css/bootstrap.css',
+        "/components/datatables/media/css/dataTables.bootstrap4.css",
+        
     );
 
     protected static $js = array(
         '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
-        //'/components/vis-ui.js/vis-ui.js-built.js',
-
-        //'@FOMCoreBundle/Resources/public/js/widgets/dropdown.js',
-        '@FOMCoreBundle/Resources/public/js/widgets/checkbox.js',
-        '@FOMCoreBundle/Resources/public/js/widgets/radiobuttonExtended.js',
-        '@FOMCoreBundle/Resources/public/js/components.js',
-        '@FOMCoreBundle/Resources/public/js/widgets/collection.js',
         '@MapbenderCoreBundle/Resources/public/mapbender.trans.js',
-        '/../vendor/twbs/bootstrap/dist/js/bootstrap.js'
+        '/../vendor/twbs/bootstrap/dist/js/bootstrap.js',
+        "/components/datatables/media/js/dataTables.bootstrap4.js",
+        '/components/underscore/underscore-min.js'
     );
 
     protected static $translations = array(
