@@ -114,7 +114,7 @@ class Style
      * @param LegendUrl $legendUrl
      * @return Style
      */
-    public function setLegendUrl(LegendUrl $legendUrl)
+    public function setLegendUrl(LegendUrl $legendUrl = NULL)
     {
         $this->legendUrl = $legendUrl;
 
