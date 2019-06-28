@@ -302,15 +302,15 @@ class LayerRendererGeoJson extends LayerRenderer
         $p[0] = round($p[0]);
         $p[1] = round($p[1]);
 
-        if (isset($style['label']) && $style['fontOpacity'] > 0) {
-            // offset text to the right of the point
-            $textXy = array(
-                $p[0] + $resizeFactor * 1.5 * $style['pointRadius'],
-                // center vertically on original y
-                $p[1] + 0.5 * $this->getLabelFontSize($canvas, $style),
-            );
-            $this->drawFeatureLabel($canvas, $style, $style['label'], $textXy);
-        }
+//        if (isset($style['label']) && $style['fontOpacity'] > 0) {
+//            // offset text to the right of the point
+//            $textXy = array(
+//                $p[0] + $resizeFactor * 1.5 * $style['pointRadius'],
+//                // center vertically on original y
+//                $p[1] + 0.5 * $this->getLabelFontSize($canvas, $style),
+//            );
+//            $this->drawFeatureLabel($canvas, $style, $style['label'], $textXy);
+//        }
 
         $diameter = max(1, round(2 * $style['pointRadius'] * $resizeFactor));
         if (isset($style['fillColor']) && $style['fillOpacity'] > 0) {
@@ -329,7 +329,16 @@ class LayerRendererGeoJson extends LayerRenderer
             }
         }
         if (!empty($style['label'])) {
-            $this->drawFeatureLabel($canvas, $style, $style['label'], $p);
+            if ($style['pointRadius'] <= 14) {
+                $textXy = array(
+                    $p[0] + $resizeFactor * 1.5 * $style['pointRadius'],
+                    // center vertically on original y
+                    $p[1] + 0.5 * $this->getLabelFontSize($canvas, $style),
+                );
+            } else {
+                $textXy = $p;
+            }
+            $this->drawFeatureLabel($canvas, $style, $style['label'], $textXy);
         }
         if (!empty($style['externalGraphic'])) {
             $anchorXy = array(
