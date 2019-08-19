@@ -1,32 +1,6 @@
 $(function () {
     var popupCls = Mapbender.Popup;
-    $("table.elementsTable tbody").sortable({
-        connectWith: "table.elementsTable tbody",
-        items: "tr:not(.dummy)",
-        distance: 20,
-        stop: function (event, ui) {
-            $(ui.item).parent().find("tr.element").each(function (idx, elm) {
-                if ($(elm).attr("data-href") === $(ui.item).attr("data-href")) {
-                    $.ajax({
-                        url: $(ui.item).attr("data-href"),
-                        type: "POST",
-                        data: {
-                            number: idx,
-                            region: $(ui.item).closest('table').attr("data-region")
-                        },
-                        success: function (data, textStatus, jqXHR) {
-                            if (data.error && data.error !== '') {
-                                document.location.reload();
-                            }
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            document.location.reload();
-                        }
-                    });
-                }
-            });
-        }
-    });
+
 
     $("table.layersetTable tbody").sortable({
         connectWith: "table.layersetTable tbody",
@@ -48,47 +22,8 @@ $(function () {
         }
     });
 
-    var popup;
-
-    function startEditElement(formUrl, strings, extraButtons) {
-
-        $.ajax(formUrl).then(function (response) {
 
 
-            var $modalDialog = $('<div />').addClass("container ");
-            var $btns = $('<div />').addClass('form-group');
-            var $btnOk = $('<button />')
-                .addClass('btn btn-success')
-                .text(Mapbender.trans(strings.title || 'mb.manager.components.popup.edit_element.title'))
-                .click(function () {
-                    this.elementFormSubmit();
-                }.bind(this))
-            ;
-            var $btnCancel = $('<button />')
-                .addClass('btn btn-warning')
-                .text(Mapbender.trans(strings.cancel || 'mb.manager.components.popup.edit_element.btn.cancel'))
-                .click(function () {
-                    $modalWrapper.modal('dispose');
-                }.bind(this))
-            ;
-            $btns.append($btnOk).append($btnCancel);
-            var $dialogCtn = $(response).append($btns);
-
-
-            $modalDialog.append($dialogCtn).dialog();
-
-            /*popup.$element.on('change', function(event) {
-                $('#elementForm', popup.$element).data('dirty', true);
-            });
-            popup.$element.on('close', function(event, token) {
-                if (true === $('#elementForm', popup.$element).data('dirty')) {
-                    if (!confirm('Ignore Changes?')) {
-                        token.cancel = true;
-                    }
-                }
-            });*/
-        }.bind(this));
-    }
 
     function startElementChooser(regionName, listUrl) {
         var title = 'mb.manager.components.popup.add_element.title';
@@ -147,30 +82,6 @@ $(function () {
         return false;
     });
 
-    function elementFormSubmit() {
-        var $form = $("#elementForm"),
-            data = $form.serialize(),
-            url = $form.attr('action'),
-            self = this;
-
-        $.ajax({
-            url: url,
-            method: 'POST',
-            data: data,
-            error: function (e, statusCode, message) {
-                Mapbender.error(Mapbender.trans("mb.application.save.failure.general") + ' ' + message);
-            },
-            success: function (data) {
-                if (data.length > 0) {
-                    $form.parent().html(data);
-                } else {
-                    $form.data('dirty', false);
-                    self.close();
-                    window.location.reload();
-                }
-            }
-        });
-    }
 
     // Element security
     $(".secureElement").bind("click", function () {
@@ -334,37 +245,7 @@ $(function () {
     });
 
     // Layers --------------------------------------------------------------------------------------
-    function addOrEditLayerset() {
-        var self = $(this);
-        var isEdit = self.hasClass("editLayerset");
-        var popupTitle = isEdit ? "mb.manager.components.popup.add_edit_layerset.title_edit"
-            : "mb.manager.components.popup.add_edit_layerset.title_add";
-        $.ajax({url: self.attr("href")}).then(function (html) {
-            popup = new popupCls({
-                title: Mapbender.trans(popupTitle),
-                closeOnOutsideClick: true,
-                destroyOnClose: true,
-                content: [html],
-                buttons: [
-                    {
-                        label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.ok"),
-                        cssClass: 'button',
-                        callback: function () {
-                            $("#layersetForm").submit();
-                        }
-                    },
-                    {
-                        label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.cancel"),
-                        cssClass: 'button buttonCancel critical',
-                        callback: function () {
-                            this.close();
-                        }
-                    }
-                ]
-            });
-        });
-        return false;
-    }
+
 
     // Add layerset action
     $(".addLayerset").bind("click", addOrEditLayerset);
@@ -501,11 +382,7 @@ $(function () {
     var setUploadFilename = function (e) {
         var fileName = $(e.currentTarget).val().replace(/^.+(\\)/, '');
         var displayFilename = fileName || Mapbender.trans('mb.manager.admin.application.upload.label');
-        if (displayFilename.length > 35) {
-            $('.upload_label').text(displayFilename.substring(0, 35) + '…');
-        } else {
-            $('.upload_label').text(displayFilename);
-        }
+        $('.upload_label').text(displayFilename);
     };
 
     var deleteScreenShotButtonInit = function () {
@@ -532,35 +409,31 @@ $(function () {
     $(document).ready(function () {
         $('.application-component-table tbody .-fn-application-visibility').each(function (ind, element) {
 
-            var isActive = $(element).data('state') === "active";
 
-            $(element).click(function (e) {
-                $.ajax({
-                    url: $(element).data('url'),
-                    type: 'POST',
-                    data: {
-                        'id': $(element).data('id'),
-                        'enabled': isActive
-                    }
-                })
-                    .done(function (data) {
-                        if (data.success) {
-                            data.success.enabled.after ? $(element).addClass('fa-eye').removeClass("fa-eye-slash") : $(element).removeClass('fa-eye').addClass("fa-eye-slash");
-
-                        } else if (data.error) {
-                            $.notify(data.error);
-                        }
-
-                    });
-            });
         });
     });
 
-// Custom CSS editor
-    (function ($) {
+
+})
+;
+
+
+(function ($) {
+    var ApplicationEditUtil = function () {
+        if (ApplicationEditUtil.prototype.instance) {
+            return this;
+        }
+        ApplicationEditUtil.prototype.instance = this;
+    };
+
+    var proto = ApplicationEditUtil.prototype;
+
+    proto.initCodeMirrorCSSEditor = function () {
         var textarea = $('#application_custom_css');
-        if (!textarea.length) return;
-        codeMirror = CodeMirror.fromTextArea(textarea[0], {
+        if (!textarea.length) {
+            return;
+        }
+        var codeMirror = CodeMirror.fromTextArea(textarea[0], {
             mode: 'css',
             keyMap: 'sublime',
             styleActiveLine: true,
@@ -576,24 +449,161 @@ $(function () {
         codeMirror.on('change', function () {
             codeMirror.save();
         });
-
-        $('#tabCustomCss').on('click', function () {
+        codeMirror.setSize("100%", "100%");
+        codeMirror.refresh();
+        $('#tabCustomCss').on('shown.bs.tab', function () {
             codeMirror.refresh();
             codeMirror.focus();
         });
-    })(jQuery);
-    (function ($) {
-        var tabkey = 'manager_active_tab';
-        if (typeof (Storage) !== "undefined" && window.sessionStorage && window.sessionStorage[tabkey]) {
-            var id = window.sessionStorage[tabkey];
-            $(".tabContainer .tab#" + id + ", .tabContainerAlt .tab#" + id).click();
-        }
-        $(".tabContainer, .tabContainerAlt").on('click', '.tab', function () {
-            if (typeof (Storage) !== "undefined" && window.sessionStorage) {
-                window.sessionStorage.setItem(tabkey, $(this).attr('id'));
+    }
+
+    proto.initJQueryListener = function () {
+
+    }
+
+    proto.initElementEnabled$Listener = function () {
+        $('.application-component-table tbody .-fn-application-visibility').click(function (event) {
+            var $element = $(event.currentTarget);
+            $.ajax({
+                url: $element.data('url'),
+                type: 'POST',
+                data: {
+                    'id': $element.data('id'),
+                    'enabled': $element.data('state') === "active"
+                }
+            }).then(function (data) {
+                if (data.success) {
+                    data.success.enabled.after ? $element.addClass('fa-eye').removeClass("fa-eye-slash") : $element.removeClass('fa-eye').addClass("fa-eye-slash");
+
+                } else if (data.error) {
+                    $.notify(data.error);
+                }
+
+            });
+
+        })
+    }
+
+    proto.elementFormSubmit = function () {
+        var $form = $("#elementForm");
+        var data = $form.serialize();
+        var url = $form.attr('action');
+
+
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: data,
+
+
+        }).error(function (e, statusCode, message) {
+            Mapbender.error(Mapbender.trans("mb.application.save.failure.general") + ' ' + message);
+        }).success(function (data) {
+            if (data.length > 0) {
+                $form.parent().html(data);
+            } else {
+                $form.data('dirty', false);
+                this.close();
+                window.location.reload();
+            }
+        }.bind(this));
+
+    }
+    proto.startEditElementstartEditElement = function (formUrl) {
+
+        $.ajax(formUrl).then(function (response) {
+            var $editContainer = $(".-fn-edit-element");
+
+            var $modalDialog = $('<div />').addClass("container ");
+            var $btns = $('<div />').addClass('form-group');
+            var $btnOk = $('<button />')
+                .addClass('btn btn-success')
+                .text(Mapbender.trans("mb.manager.components.popup.edit_element.title"))
+                .click(function () {
+                    this.elementFormSubmit();
+                }.bind(this))
+            ;
+            var $btnCancel = $("<button />")
+                .addClass("btn btn-danger")
+                .text(Mapbender.trans("mb.manager.components.popup.edit_element.btn.cancel"))
+                .click(function () {
+                    $editContainer.emtpy();
+                }.bind(this))
+            ;
+            $btns.append($btnOk).append($btnCancel);
+            var $dialogCtn = $(response).append($btns);
+
+
+            $editContainer.empty().append($modalDialog.append($dialogCtn));
+
+
+        }.bind(this));
+    }
+
+
+    proto.initSortableTables = function () {
+        $("table.elementsTable tbody").sortable({
+            connectWith: "table.elementsTable tbody",
+            items: "tr:not(.dummy)",
+            distance: 20,
+            stop: function (event, ui) {
+                $(ui.item).parent().find("tr.element").each(function (idx, elm) {
+                    if ($(elm).attr("data-href") === $(ui.item).attr("data-href")) {
+                        $.ajax({
+                            url: $(ui.item).attr("data-href"),
+                            type: "POST",
+                            data: {
+                                number: idx,
+                                region: $(ui.item).closest('table').attr("data-region")
+                            }
+                        }).done(function (data, textStatus, jqXHR) {
+                            if (data.error && data.error !== '') {
+                                document.location.reload();
+                            }
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            document.location.reload();
+                        })
+                        ;
+                    }
+                });
             }
         });
-    })(jQuery);
+    },
+
+        proto.addOrEditLayerset = function () {
+            var $this = $(this);
+            var isEdit = $this.hasClass("editLayerset");
+            var popupTitle = isEdit ? "mb.manager.components.popup.add_edit_layerset.title_edit"
+                : "mb.manager.components.popup.add_edit_layerset.title_add";
+            $.ajax({url: $this.attr("href")}).then(function (html) {
+                $(html).dialog({
+                    title: Mapbender.trans(popupTitle),
+                    closeOnOutsideClick: true,
+                    destroyOnClose: true,
+                    content: [],
+                    buttons: [
+                        {
+                            label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.ok"),
+                            cssClass: 'button',
+                            callback: function () {
+                                $("#layersetForm").submit();
+                            }
+                        },
+                        {
+                            label: Mapbender.trans("mb.manager.components.popup.add_edit_layerset.btn.cancel"),
+                            cssClass: 'button buttonCancel critical',
+                            callback: function () {
+                                this.close();
+                            }
+                        }
+                    ]
+                });
+            });
+
+        };
+
+    window.applicationEditUtil = new ApplicationEditUtil();
 })
-;
+(jQuery);
+
 
