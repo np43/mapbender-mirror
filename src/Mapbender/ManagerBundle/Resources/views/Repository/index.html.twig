@@ -18,7 +18,7 @@
     {% if sources|length > 0 %}
 
 
-        <table id="-fn-sources-table" class="table table-striped ﬂ">
+        <table id="-fn-sources-table" class="table table-striped">
 
             <thead>
             <tr>
@@ -41,9 +41,10 @@
 
                     <td>
                         {% if usedInApplication[source.id] is defined %}
-                            <ul class="list-unstyled">
+                            <div data-toggle="collapse" data-target="{{ '#-fn-used-in-' ~loop.index   }}">Genutzt in <i class="fa fa-chevron-down"></i></div>
+                            <ul id="{{ '-fn-used-in-' ~loop.index   }}" class="list-group collapse">
                                 {% for application in usedInApplication[source.id] %}
-                                    <li><a href="">{{ application.title }}</a></li>
+                                    <li class="list-group-item"><a href="">{{ application.title }}</a></li>
                                 {% endfor %}
                             </ul>
 
@@ -87,7 +88,15 @@
 
     <script>
         window.onload = function () {
-          $('#-fn-sources-table').DataTable();
+          $('#-fn-sources-table').DataTable( {
+              responsive: true,
+                columnDefs: [ {
+                    targets: 2,
+                    render: function ( data, type, row ) {
+                        return data.substr( 0, 100) + '...';
+                    }
+                } ]
+            } );
         }
     </script>
 {% endblock %}

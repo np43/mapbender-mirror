@@ -3,20 +3,29 @@
 {% block title %}{{ 'mb.manager.admin.source.new.add' | trans }}{% endblock %}
 
 {% block css %}
-  {{parent()}}
+    {{ parent() }}
 {% endblock %}
 
 {% block manager_content %}
-<div id="sourceTabContainer" class="tabContainer sourceTabContainer">
-  <ul class="tabs">
-{% for name, manager in managers %}
-    <li id="tab{{loop.index}}" class="tab{% if loop.first %} active{% endif %}">{{manager.label }}</li>
-{% endfor %}
-  </ul>
-{% for name, manager in managers %}
-  <div id="container{{loop.index}}" class="container containerBaseData{% if loop.first %} active{% endif %}">
-    {% render controller(manager.startAction) %}
-  </div>
-{% endfor %}
-</div>
+    <div id="sourceTabContainer" class="tabContainer sourceTabContainer">
+        <nav>
+            <div class="nav nav-tabs" role="tablist">
+                {% for name, manager in managers %}
+                    {% set active = loop.first ? 'active' : '' %}
+                    <a data-toggle="tab" id="tab{{ loop.index }}" class="nav-item nav-link {{ active }}"
+                       href="#container{{ loop.index }}">{{ manager.label }}</a>
+                {% endfor %}
+            </div>
+        </nav>
+
+        <div class="tab-content">
+
+            {% for name, manager in managers %}
+                <div class="no-gutters tab-pane fadein active" id="container{{ loop.index }}"
+                     class="container no-gutters containerBaseData{% if loop.first %} active{% endif %}">
+                    {% render controller(manager.startAction) %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}

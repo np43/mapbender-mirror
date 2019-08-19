@@ -27,6 +27,7 @@ mb:
             backtoservicelist: 'Zurück zur Diensteliste'
             metadata: Metadaten
             contact: Kontakt
+            service : Service
             details: Details
             layers: Layer
             title: Titel

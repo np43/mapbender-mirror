@@ -3,15 +3,20 @@
 {% else %}
     {% set isCollapsed = "" %}
 {% endif %}
+{% if iteration is not defined %}
+{% set iteration = '0' %}
+{% endif %}
 
 
-<ul class="list-group {{ isCollapsed }} pl-{{ itemLevel }} ">
+
+
+<ul id="Sublayer{{ itemLevel~'-'~iteration }}" class="list-group {{ isCollapsed }} pl-{{ itemLevel }} list-group-flush ">
     <li class="list-group-item">
         <table class="table">
             {% for key in ["name", "title", "abstract", "queryable", "cascaded", "opaque", "noSubset", "fixedWidth", "fixedHeight",   ] %}
                 {% if attribute(layer,key)|length > 0 %}
                     <tr>
-                        <td>{{ "mb.wms.wmsloader.repo.layer.label."~key  | trans }}</td>
+                        <td>{{ ("mb.wms.wmsloader.repo.layer.label."~key)  | trans }}</td>
                         <td>{{ attribute(layer,key) }}</td>
                     </tr>
                 {% endif %}
@@ -272,9 +277,11 @@
 
 
     {% if layer.sublayer|length > 0 %}
+        {% set itemLevel = itemLevel+ 1  %}
         {% for sublayer in layer.sublayer %}
             <li class="list-group-item">
-                {% include "MapbenderWmsBundle:Repository:layer.html.twig"  with {'layer': sublayer, 'itemLevel': itemLevel + 1 } %}
+                <div data-toggle="collapse" data-target="#Sublayer{{ itemLevel~'-'~loop.index  }}"><i class="fa fa-chevron-down"></i>Layer: {{ sublayer.name }}</div>
+                {% include "MapbenderWmsBundle:Repository:layer.html.twig"  with {'layer': sublayer, 'itemLevel': itemLevel  , iteration : loop.index } %}
             </li>
         {% endfor %}
     {% endif %}
