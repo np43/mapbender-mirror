@@ -22,8 +22,10 @@ class ManagerTemplate extends Template
     protected static $js = array(
         '/components/jquerydialogextendjs/jquerydialogextendjs-built.js',
         '@MapbenderCoreBundle/Resources/public/mapbender.trans.js',
+        '@MapbenderCoreBundle/Resources/public/vendor/popper.js',
         '/../vendor/twbs/bootstrap/dist/js/bootstrap.js',
         "/components/datatables/media/js/dataTables.bootstrap4.js",
+        
         '/components/underscore/underscore-min.js'
     );
 
